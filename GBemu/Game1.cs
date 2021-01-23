@@ -16,7 +16,6 @@ namespace GBemu
 
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
-        private RenderTarget2D scene;
 
         /// <summary>
         /// Sets up the monogame framework
