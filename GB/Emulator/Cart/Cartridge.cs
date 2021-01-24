@@ -72,16 +72,4 @@ namespace GB.Emulator
             return result;
         }
     }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public class CartridgeMBC1 : Cartridge
-    {
-        public override byte ReadByte(ushort addr)
-        {
-
-            return rom[addr];
-        }
-    }
 }
