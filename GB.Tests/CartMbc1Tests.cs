@@ -15,12 +15,10 @@ namespace GB.Tests
         {
             cart = new CartridgeMBC1(TestCartsPaths.pkmnBlueFile);
             var bank = cart.Bank;
-            var bankset = cart.BankSet;
             var bankMode = cart.BankMode;
 
             cart.WriteByte(0x1000, 0x0a);
             Assert.That(bank, Is.EqualTo(cart.Bank));
-            Assert.That(bankset, Is.EqualTo(cart.BankSet));
             Assert.That(bankMode, Is.EqualTo(cart.BankMode));
         }
 
@@ -38,9 +36,18 @@ namespace GB.Tests
         {
             cart = new CartridgeMBC1(TestCartsPaths.pkmnBlueFile);
 
-            cart.WriteByte(0x5000, 0x18);
 
-            Assert.That(cart.BankSet, Is.EqualTo(3));
+            cart.WriteByte(0x3000, 0x0); //set rombank
+            Assert.That(cart.Bank, Is.EqualTo(1));
+
+            cart.WriteByte(0x3000, 0x1);
+            Assert.That(cart.Bank, Is.EqualTo(1));
+
+            cart.WriteByte(0x3000, 0x2);
+            Assert.That(cart.Bank, Is.EqualTo(2));
+
+            cart.WriteByte(0x5000, 0x1);
+            Assert.That(cart.Bank, Is.EqualTo(0x22));
         }
 
         [Test]

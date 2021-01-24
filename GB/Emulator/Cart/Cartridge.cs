@@ -49,6 +49,62 @@ namespace GB.Emulator
             result.Type = (CartridgeType)this.ReadByte(AddressHelper.CART_TYPE);
             result.Destination = (Destination)this.ReadByte(AddressHelper.DESTINATION);
             result.ExternalRam = (ExRam)this.ReadByte(AddressHelper.RAM_SIZE);
+            int ramSize;
+            switch (result.ExternalRam)
+            {
+                case ExRam.k2:
+                    ramSize = 2;
+                    break;
+                case ExRam.k8:
+                    ramSize = 8;
+                    break;
+                case ExRam.k32:
+                    ramSize = 32;
+                    break;
+                case ExRam.k128:
+                    ramSize = 128;
+                    break;
+                case ExRam.k64:
+                    ramSize = 64;
+                    break;
+                default:
+                    ramSize = 0;
+                    break;
+            }
+            result.ExRamSize = ramSize;
+
+            switch (result.Size)
+            {
+                case RomSize.k32:
+                    result.RomBytes = 2 << 15;
+                    break;
+                case RomSize.k64:
+                    result.RomBytes = 2 << 16;
+                    break;
+                case RomSize.k128:
+                    result.RomBytes = 2 << 17;
+                    break;
+                case RomSize.k256:
+                    result.RomBytes = 2 << 18;
+                    break;
+                case RomSize.k512:
+                    result.RomBytes = 2 << 19;
+                    break;
+                case RomSize.m1:
+                    result.RomBytes = 2 << 20;
+                    break;
+                case RomSize.m2:
+                    result.RomBytes = 2 << 21;
+                    break;
+                case RomSize.m4:
+                    result.RomBytes = 2 << 22;
+                    break;
+                case RomSize.m8:
+                    result.RomBytes = 2 << 23;
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
             return result;
         }
 

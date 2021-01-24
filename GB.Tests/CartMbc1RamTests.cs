@@ -29,6 +29,12 @@ namespace GB.Tests
             //enable exRam
             cart.WriteByte(0x0000, 0x0a);
             Assert.That(cart.RamEnable);
+
+            cart.WriteByte(0x0000, 0xfb);
+            Assert.That(!cart.RamEnable);
+
+            cart.WriteByte(0x0, 0xfa);
+            Assert.That(cart.RamEnable);
         }
         [Test]
         public void EnableRamBankingMode()

@@ -29,12 +29,12 @@
         /// Specifies the ROM size of the cartridge. Typically calculated as "N such that 32Kib << N"
         /// </summary>
         public RomSize Size;
-
+        public int RomBytes;
         /// <summary>
         /// Specifies the size of the external RAM in the cartridge (if any).
         /// </summary>
         public ExRam ExternalRam;
-
+        public int ExRamSize;
         /// <summary>
         /// Specifies if this version of the game is supposed to be sold in Japan, or anywhere else. Only two values are defined.
         /// </summary>

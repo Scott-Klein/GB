@@ -20,36 +20,14 @@ namespace GB.Emulator
 
         public CartridgeMBC1_RAM(string romFile) : base(romFile)
         {
-            int ramSize;
-            switch (this.Info.ExternalRam)
-            {
-                case ExRam.k2:
-                    ramSize = 2;
-                    break;
-                case ExRam.k8:
-                    ramSize = 8;
-                    break;
-                case ExRam.k32:
-                    ramSize = 32;
-                    break;
-                case ExRam.k128:
-                    ramSize = 128;
-                    break;
-                case ExRam.k64:
-                    ramSize = 64;
-                    break;
-                default:
-                    ramSize = 0;
-                    break;
-            }
             MemoryMappedFile mmf;
             if (this.Info.Type == CartridgeType.MBC1_RAM_BATTERY)
             {
-                mmf = MemoryMappedFile.CreateFromFile(romFile.Remove(romFile.IndexOf('.')) + ".sav", FileMode.OpenOrCreate,null, ramSize * 1024);
+                mmf = MemoryMappedFile.CreateFromFile(romFile.Remove(romFile.IndexOf('.')) + ".sav", FileMode.OpenOrCreate,null, this.Info.ExRamSize * 1024);
             }
             else
             {
-                mmf = MemoryMappedFile.CreateNew(null, ramSize * 1024);
+                mmf = MemoryMappedFile.CreateNew(null, this.Info.ExRamSize * 1024);
             }
 
             this.ram = mmf.CreateViewAccessor(0, 0, MemoryMappedFileAccess.ReadWrite);
@@ -64,7 +42,7 @@ namespace GB.Emulator
         {
             if (addr < 0x2000)
             {
-                if (value == 0x0a)
+                if ((value &0xf) == 0x0a)
                 {
                     this.ramEnable = true;
                 }

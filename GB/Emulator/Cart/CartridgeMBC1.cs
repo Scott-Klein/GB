@@ -1,24 +1,5 @@
-﻿using GB.Emulator.Cart;
-
-namespace GB.Emulator
+﻿namespace GB.Emulator
 {
-
-    public class CartridgeMBC : Cartridge
-    {
-        protected int bank;
-        protected int bankSet;
-        protected BankingMode bankMode;
-
-        /* Props for unit testing */
-        public BankingMode BankMode { get { return this.bankMode; } }
-        public int Bank { get { return this.bank; } }
-        public int BankSet { get { return this.bankSet; } }
-
-        public CartridgeMBC(string romFile) : base(romFile)
-        {
-
-        }
-    }
     /// <summary>
     /// Represents a cart with just an MBC1.
     /// </summary>
@@ -28,11 +9,6 @@ namespace GB.Emulator
 
         public CartridgeMBC1(string romFile) : base(romFile)
         {
-        }
-
-        public override byte ReadByte(ushort addr)
-        {
-            return rom[(this.bank * this.bankSet) * AddressHelper.ROM_BANK_WIDTH + addr];
         }
 
         /// <summary>
@@ -46,7 +22,7 @@ namespace GB.Emulator
         /// a byte to write to the rom at the location, specific bytes control
         /// enabling and disabling ram, and selecting rom banks.
         /// </param>
-        public virtual void WriteByte(ushort addr, byte value)
+        public override void WriteByte(ushort addr, byte value)
         {
             switch (addr)
             {
@@ -57,16 +33,16 @@ namespace GB.Emulator
                      * overrides for ram implementations will handle these cases.
                     */
                     break;
-                case var a when a > 0x1fff && a <= 0x3fff:
-                    this.bank = (value & 0x1f);
-                    if (this.bank == 0)
+                case var a when a <= 0x3fff:
+                    this.lowBank = (value & 0x1f);
+                    if (this.lowBank == 0)
                     {
-                        this.bank++;
+                        this.lowBank++;
                     }
                     break;
                 //Switch the rom bank set, (1-31), (32-
                 case var a when a >= 0x4000 && a <= 0x5fff:
-                    this.bankSet = (value & 0x18) >> 3;
+                    this.highBank = (value & 3) << 5;
                     break;
                 case var a when a <= 0x7fff:
                     if ((value & 1) == 1)
@@ -80,15 +56,15 @@ namespace GB.Emulator
                     break;
             }
         }
-    }
 
-    /// <summary>
-    /// Represents a cart with an MBC2, this variant always has 512x4 bits Ram
-    /// </summary>
-    public class CartridgeMBC2 : CartridgeMBC
-    {
-        public CartridgeMBC2(string romFile) : base(romFile)
+        public override byte ReadByte(ushort addr)
         {
+            return addr switch
+            {
+                var a when a <= 0x3fff && bankMode == BankingMode.ROM => rom[a],
+                var a when a <= 0x3fff => rom[highBank * 0x4000 + a],
+                var a when a <= 0x7fff => rom[((highBank << 5) | lowBank) + (a & 0x3fff)]
+            };
 
         }
     }
