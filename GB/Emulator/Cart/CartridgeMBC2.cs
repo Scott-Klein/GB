@@ -25,10 +25,9 @@ namespace GB.Emulator
         {
             return addr switch
             {
-                var a when a <= 0x3fff => rom[a % Info.RomBytes], //0000-3FFF contains the first 16kbyte of the rom.
+                var a when a <= 0x3fff => rom[a], //0000-3FFF contains the first 16kbyte of the rom.
                 var a when a <= 0x7fff => rom[((lowBank & 0xf) + (a & 0x3fff)) % Info.RomBytes],
-                var a when a >= 0xa000 && a <= 0xa1ff => this.ram.ReadByte(addr & 0x1ff)
-
+                var a when a >= 0xa000 && a <= 0xa1ff => this.ram.ReadByte((addr & 0x1ff) % (this.Info.ExRamSize * 1024))
             };
             throw new ArgumentOutOfRangeException("addr",addr, $"Tried to read 0x{addr} from an MBC2 cartridge. This implementation of ReadByte does not handle the address inputed.");
         }
@@ -54,7 +53,6 @@ namespace GB.Emulator
                         this.lowBank++;
                     }
                     break;
-
                 case var n when n <= 0x3fff && (addr & 0x100) == 0:
                     this.ramEnable = value == RAM_ENABLE ? true : false;
                     break;

@@ -7,9 +7,9 @@ namespace GB.Emulator
 {
     public class CartridgeMBC1_RAM : CartridgeMBC1
     {
-        private MemoryMappedViewAccessor ram;
-        private bool ramEnable;
-        private int ramBank;
+        protected MemoryMappedViewAccessor ram;
+        protected bool ramEnable;
+        protected int ramBank;
 
 
         //Public property for unit testing.
@@ -21,7 +21,7 @@ namespace GB.Emulator
         public CartridgeMBC1_RAM(string romFile) : base(romFile)
         {
             MemoryMappedFile mmf;
-            if (this.Info.Type == CartridgeType.MBC1_RAM_BATTERY)
+            if (this.Info.Type == CartridgeType.MBC1_RAM_BATTERY || this.Info.Type == CartridgeType.MBC3_RAM_BATTERY)
             {
                 mmf = MemoryMappedFile.CreateFromFile(romFile.Remove(romFile.IndexOf('.')) + ".sav", FileMode.OpenOrCreate,null, this.Info.ExRamSize * 1024);
             }
@@ -40,6 +40,7 @@ namespace GB.Emulator
         /// <param name="value">The byte that will be written</param>
         public override void WriteByte(ushort addr, byte value)
         {
+            //I need to rewrite this as a switch
             if (addr < 0x2000)
             {
                 if ((value &0xf) == 0x0a)
@@ -51,16 +52,18 @@ namespace GB.Emulator
                     this.ramEnable = false;
                 }
             }
-            if (addr >= 0x4000 && addr <= 0x5fff && this.BankMode == BankingMode.RAM)
+            else if(addr >= 0x4000 && addr <= 0x5fff && this.BankMode == BankingMode.RAM)
             {
                 this.ramBank = value & 0x3;
             }
-            if (addr >= AddressHelper.SRAM_START && addr <= AddressHelper.SRAM_END)
+            else if (addr >= AddressHelper.SRAM_START && addr <= AddressHelper.SRAM_END)
             {
-                
                 ram.Write(AddressHelper.SRAM_BANK_WIDTH * this.ramBank + (addr & AddressHelper.SRAM_MASK), value);
             }
-            base.WriteByte(addr, value);
+            else
+            {
+                base.WriteByte(addr, value);
+            }
         }
 
         public override byte ReadByte(ushort addr)

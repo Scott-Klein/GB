@@ -61,7 +61,7 @@
         {
             return addr switch
             {
-                var a when a <= 0x3fff && bankMode == BankingMode.ROM => rom[a],
+                var a when a <= 0x3fff && bankMode == BankingMode.ROM => rom[a % Info.RomBytes],
                 var a when a <= 0x3fff => rom[highBank * 0x4000 + a],
                 var a when a <= 0x7fff => rom[((highBank << 5) | lowBank) + (a & 0x3fff)]
             };

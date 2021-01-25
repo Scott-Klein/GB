@@ -14,6 +14,8 @@ namespace GB.Emulator
 
         private RomInfo info;
 
+        private ICartROM ROM;
+
         public virtual string CartridgeOutOfRange(string addr) => $"Cartridge base class addresses up to {addr}, received address was out of bounds for a plain 32KiB cartridge.";
 
         public RomInfo Info { get { return this.info; } }
@@ -28,12 +30,13 @@ namespace GB.Emulator
         {
             this.rom = File.ReadAllBytes(romFile);
             this.info = ReadInfo();
+            this.info.FileName = romFile;
         }
 
         private RomInfo ReadInfo()
         {
             RomInfo result = new RomInfo();
-
+            
             result.Name = Encoding.UTF8.GetString(this.ReadByte(AddressHelper.ROM_TITLE, GB_TITLE_LENGTH)).Trim('\0');
 
             //Read the cgb flag. 
@@ -47,25 +50,27 @@ namespace GB.Emulator
             }
             result.Size = (RomSize)this.ReadByte(AddressHelper.ROM_SIZE);
             result.Type = (CartridgeType)this.ReadByte(AddressHelper.CART_TYPE);
+
+            
             result.Destination = (Destination)this.ReadByte(AddressHelper.DESTINATION);
             result.ExternalRam = (ExRam)this.ReadByte(AddressHelper.RAM_SIZE);
             int ramSize;
             switch (result.ExternalRam)
             {
                 case ExRam.k2:
-                    ramSize = 2;
+                    ramSize = 1 << 11;
                     break;
                 case ExRam.k8:
-                    ramSize = 8;
+                    ramSize = 1 << 13;
                     break;
                 case ExRam.k32:
-                    ramSize = 32;
+                    ramSize = 1 << 15;
                     break;
                 case ExRam.k128:
-                    ramSize = 128;
+                    ramSize = 1 << 17;
                     break;
                 case ExRam.k64:
-                    ramSize = 64;
+                    ramSize = 1 << 16;
                     break;
                 default:
                     ramSize = 0;

@@ -1,4 +1,6 @@
-﻿namespace GB.Emulator
+﻿using GB.Emulator.Cart;
+
+namespace GB.Emulator
 {
     public class CartridgeMBC : Cartridge
     {
@@ -30,6 +32,42 @@
                 var a when a <= 0x7fff => rom[((highBank << 5) | lowBank) + (a & 0x3fff)]
             };
             
+        }
+    }
+
+    public class CartridgeMBC3 : CartridgeMBC1_RAM
+    {
+        
+        public CartridgeMBC3(string romFile) :base(romFile)
+        {
+
+        }
+
+        public override byte ReadByte(ushort addr)
+        {
+            if (addr <= 0x3fff) // Pan-docs state that the behaviour is the same as MBC1, so delegate that to the base class version
+            {
+                return base.ReadByte(addr);
+            }
+
+            return addr switch
+            {
+                var a when a <= 0x7fff => rom[((highBank << 5) | lowBank) + (a & 0x3fff)]
+            };
+        }
+
+        public override void WriteByte(ushort addr, byte value)
+        {
+            switch (addr)
+            {
+                case var a when a < 0x2000:
+                    base.WriteByte(addr, value);
+                    break;
+                case var a when a < 0x4000:
+                    this.ramBank = value & 0x7f;
+                    break;
+            }
+            base.WriteByte(addr, value);
         }
     }
 }

@@ -18,7 +18,7 @@
         /// Specifies the different types of Member Bank Controller that may be used in the cart, and what types of additional hardware exists as well.
         /// </summary>
         public CartridgeType Type;
-
+        public bool HasBattery;
         /// <summary>
         /// Roms contain an SGB flag to specify wherther the game supports any extra SGB functions.
         /// A real SGB turns of its special functions if this by is set to anything that isn't 0x03
@@ -44,6 +44,8 @@
         /// The cartridge can be a CGB cart or a normal GB cart.
         /// </summary>
         public CGBcompat CGB;
+
+        public string FileName;
     }
 }
 
