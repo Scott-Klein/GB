@@ -9,6 +9,8 @@ namespace GB.Emulator
     /// </summary>
     public class CartridgeMBC2 : CartridgeMBC
     {
+        private const int RAM_ENABLE_MASK = 0x100;
+        private const int RAM_ENABLE = 0xa;
         private bool ramEnable;
         private int ramBank;
         private MemoryMappedViewAccessor ram;
@@ -16,14 +18,15 @@ namespace GB.Emulator
         {
             //every mbc2 has battery backed ram, so we will create a file on the disc.
             this.ram = MemoryMappedFile.CreateFromFile(romFile.Remove(romFile.IndexOf('.')), FileMode.OpenOrCreate, null, this.Info.ExRamSize * 1024).CreateViewAccessor(0, 0, MemoryMappedFileAccess.ReadWrite);
+            this.ramEnable = false;
         }
 
         public override byte ReadByte(ushort addr)
         {
             return addr switch
             {
-                var a when a <= 0x3fff => rom[a], //0000-3FFF contains the first 16kbyte of the rom.
-                var a when a <= 0x7fff => rom[(lowBank & 0xf) + (a & 0x3fff)],
+                var a when a <= 0x3fff => rom[a % Info.RomBytes], //0000-3FFF contains the first 16kbyte of the rom.
+                var a when a <= 0x7fff => rom[((lowBank & 0xf) + (a & 0x3fff)) % Info.RomBytes],
                 var a when a >= 0xa000 && a <= 0xa1ff => this.ram.ReadByte(addr & 0x1ff)
 
             };
@@ -43,7 +46,7 @@ namespace GB.Emulator
             {
                 //Ram Enable and ROM bank Number. bit 8 == 0 means we are controlling RAM
                 //bit 8 == 1 means we are controlling the rom bank number.
-                case var n when n <= 0x3fff && (value & 0x80) == 0x80:
+                case var n when n <= 0x3fff && (addr & RAM_ENABLE_MASK) > 0:
                     //set the rom bank number
                     this.lowBank = value & 0xf;
                     if (this.lowBank == 0)
@@ -52,9 +55,14 @@ namespace GB.Emulator
                     }
                     break;
 
-                case var n when n <= 0x3fff && (value * 0x80) == 0:
-                    this.ramEnable = value == 0xa ? true : false;
+                case var n when n <= 0x3fff && (addr & 0x100) == 0:
+                    this.ramEnable = value == RAM_ENABLE ? true : false;
                     break;
+                case var n when n >= 0xa000 && n <= 0xa1ff && this.ramEnable:
+                    this.ram.Write(addr & 0x1ff, value);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException("addr", addr, $"{addr} was out of range for writing to MBC2, value: {value}");
             }
         }
     }
