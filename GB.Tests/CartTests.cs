@@ -25,7 +25,7 @@ namespace GB.Tests
         public void ReadsRomTitle()
         {
             cart = new Cartridge(testcart);
-            Assert.That(cart.Info.Name, Is.EqualTo("POKEMON RED"));
+            Assert.That(cart.Info.Name, Is.EqualTo("TETRIS"));
 
         }
 
@@ -33,7 +33,7 @@ namespace GB.Tests
         public void ReadsCorrectRomSize_Returns1mb()
         {
             cart = new Cartridge(testcart);
-            Assert.That(cart.Info.Size, Is.EqualTo(RomSize.m1));
+            Assert.That(cart.Info.Size, Is.EqualTo(RomSize.k32));
         }
 
         [Test]
@@ -49,14 +49,14 @@ namespace GB.Tests
         {
             cart = new Cartridge(testcart);
 
-            Assert.That(cart.Info.Type, Is.EqualTo(CartridgeType.MBC3_RAM_BATTERY));
+            Assert.That(cart.Info.Type, Is.EqualTo(CartridgeType.ROM_ONLY));
         }
 
         [Test]
         public void ReadsInternational()
         {
             cart = new Cartridge(testcart);
-            Assert.That(cart.Info.Destination, Is.EqualTo(Destination.Not_Japan));
+            Assert.That(cart.Info.Destination, Is.EqualTo(Destination.Japan));
         }
     }
 }

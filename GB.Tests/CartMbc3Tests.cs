@@ -31,7 +31,7 @@ namespace GB.Tests
         [Test]
         public void WriteBytesToRam()
         {
-            cart = new Cartridge(TestCartsPaths.pkmnBlueFile);
+            cart = new Cartridge(TestCartsPaths.pkmnRedFile);
             //enable exRam
             cart.WriteByte(0x0000, 0x0a); //enable ram
 
