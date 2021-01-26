@@ -16,11 +16,6 @@ namespace GB.Emulator.Cart
 
         public byte ReadByte(ushort addr)
         {
-            if (addr > 0x7fff)
-            {
-                var ex = new ArgumentOutOfRangeException("addr", addr, $"Address: {addr} was out of range for a Standard ROM cart");
-                throw ex;
-            }
             return ROM[addr % ROM.Length]; 
         }
 

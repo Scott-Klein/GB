@@ -10,14 +10,14 @@ namespace GB.Tests
 {
     class CartMbc2Tests
     {
-        CartridgeMBC2 cart;
+        Cartridge cart;
+        public const string testRom = TestCartsPaths.kirby_pinball;
         [Test]
         public void SetRomBank()
         {
-            cart = new CartridgeMBC2(TestCartsPaths.pkmnBlueFile);
+            cart = new Cartridge(testRom);
 
-            cart.WriteByte(0x0, 0x80 | 0x10);
-            Assert.That(cart.Bank, Is.EqualTo(0x10 % 0xf));
+            Assert.That(cart.Info.Type, Is.EqualTo(CartridgeType.MBC2_BATTERY));
             
         }
     }

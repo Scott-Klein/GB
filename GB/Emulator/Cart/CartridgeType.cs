@@ -7,7 +7,7 @@
         MBC1_RAM = 0x02,
         MBC1_RAM_BATTERY = 0x03,
         MBC2 = 0x05,
-        MBC_BATTERY = 0x06,
+        MBC2_BATTERY = 0x06,
         ROM_RAM = 0x08,
         ROM_RAM_BATTERY = 0x09,
         MMM01 = 0x0b,
