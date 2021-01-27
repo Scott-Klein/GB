@@ -87,7 +87,7 @@ namespace GB.Emulator
                     
             }
         }
-        public void ww(ushort addr, ushort value)
+        public void WriteWord(ushort addr, ushort value)
         {
 
         }

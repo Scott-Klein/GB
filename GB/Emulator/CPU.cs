@@ -8,23 +8,6 @@ namespace GB.Emulator
 {
     public sealed class CPU
     {
-        private const int X_MASK = 0x3f;
-        private const int Z_MASK = 0x7;
-        private const int Y_MASK = 0x38;
-        private const int P_MASK = 0x30;
-        private const int Q_MASK = 0x8;
-        private const int X_3 = 0xc0;
-        private const int X_2 = 0x80;
-        private const int X_1 = 0x40;
-        private const int Y_1 = 0x8;
-        private const int Y_2 = 0x10;
-        private const int Y_3 = 0x18;
-        private const int Y_4 = 0x20;
-        private const int Y_5 = 0x28;
-        private const int Y_6 = 0x30;
-        private const int Y_7 = 0x38;
-
-
         private byte a;
         private byte b;
         private byte c;
@@ -148,7 +131,10 @@ namespace GB.Emulator
         }
         private Clock clock;
         private MMU mmu;
-
+        private bool zero;
+        private bool carry;
+        private bool subtract;
+        private bool halfCarry;
         public CPU(MMU mmu)
         {
             ResetRegisters();
@@ -187,63 +173,107 @@ namespace GB.Emulator
 
         private void Dispatch(byte op)
         {
-            bool throwEx = true;
-            switch(op & X_MASK)
+            switch(op)
             {
                 case 0:
-                    switch (op & Z_MASK)
-                    {
-                        case 0:
-                            switch (op & Y_MASK)
-                            {
-                                case 0: //NOP
-                                    break;
-                                case Y_1:
-                                    //LD(nn), SP
-                                    ushort nextWord = mmu.rw(pc + 1);
-                                    mmu.ww(nextWord, sp);
-                                    break;
-                                case Y_2:
-                                    //STOP
-                                    throw new Exception("I have no idea how to handle a stop instruction. Sorry");
-                                    break;
-                                case Y_3:
-                                    /* JR d
-                                     Final address = d + 2 + instruction address.
-                                     */
-                                    byte d = mmu.rb(pc + 1);
-                                    pc = (ushort)(d + pc + 2); //
-                                    break;
-                                case Y_4:
-                                    //
+                    //nop;
+                    break;
+                case 0x8:
+                    //LD(nn),sp
+                    mmu.WriteWord(NextWord(), sp);
+                    break;
+                case 0x10:
+                    throw new Exception("STOP");
+                case 0x18:
+                case 0x20:
+                case 0x28:
+                case 0x30:
+                case 0x38:
+                    Jr(op);
+                    break;
+                case 0x01:
+                case 0x11:
+                case 0x21:
+                case 0x31:
+                    Ld16((ushort)((op & 0x30) >> 4), NextWord());
+                    break;
+                case 0x09:
+                case 0x19:
+                case 0x29:
+                case 0x39:
+                    AddHL((ushort)((op & 0x30) >> 4));
+                        break;
 
-                                    break;
-                            }
-                            throwEx = false;
-                            break;
-                        case 1:
-                        case 2:
-                    }
-                    break;
-                case X_1:
-                    break;
-                case X_2:
-                    break;
-                case X_3:
-                    break;
-                    
-                    
-                    
+                default:
+                    throw new NotImplementedException($"The op code {op:X2} has not been implemented yet.");
             }
-            if (throwEx)
+           
+        }
+        private void AddHL(ushort v)
+        {
+            subtract = false;
+            halfCarry = (HL & 0xfff) + (v & 0xfff) > 0xfff;
+            carry = (HL & 0xffff) + (v & 0xffff) > 0xffff;
+            HL += v;
+        }
+
+        private ushort Reg16Rp(int v)
+        {
+            return v switch
             {
-                throw new NotImplementedException($"The op code {op:X2} has not been implemented yet.");
+                0 => BC,
+                1 => DE,
+                2 => HL,
+                3 => sp
+            };
+        }
+
+        private void Ld16(ushort reg, ushort addr)
+        {
+            switch(reg)
+            {
+                case 0:
+                    BC = NextWord();
+                    break;
+                case 1:
+                    DE = NextWord();
+                    break;
+                case 2:
+                    HL = NextWord();
+                    break;
+                case 3:
+                    sp = NextWord();
+                    break;
             }
+        }
+
+        private ushort NextWord()
+        {
+            return mmu.rw(pc++);
+        }
+        private void Ld(byte op)
+        {
+
         }
 
         private void Jr(byte op)
         {
-
+            if (op == 0x18 || cc(op))
+            {
+                byte d = mmu.rb(pc + 1);
+                pc += (ushort)(d + 2); 
+            }
+        }
+        public bool cc(byte op)
+        {
+            return ((op & 0x38) >> 3) switch
+            {
+                0 => !zero,
+                1 => zero,
+                2 => !carry,
+                3 => carry,
+                _ => throw new NotImplementedException()
+            };
         }
     }
 }
