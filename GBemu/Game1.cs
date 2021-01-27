@@ -54,7 +54,7 @@ namespace GBemu
         }
 
         /// <summary>
-        /// Triggers emulator ticks
+        /// 
         /// </summary>
         /// <param name="gameTime"></param>
         protected override void Update(GameTime gameTime)

@@ -167,9 +167,6 @@ namespace GB.Emulator
 
         }
 
-        //LD sp, nn (next word)
-        //this.sp = mmu.rw((ushort)(pc + 1));
-        //break;
 
         private void Dispatch(byte op)
         {
@@ -203,18 +200,101 @@ namespace GB.Emulator
                 case 0x39:
                     AddHL((ushort)((op & 0x30) >> 4));
                         break;
-
+                case 0x02:
+                case 0x12:
+                case 0x22:
+                case 0x32:
+                    LDr((op >> 4) & 0x03, a);
+                    break;
+                case 0xa:
+                case 0x1a:
+                case 0x2a:
+                case 0x3a:
+                    LDr(a, (op >> 4) & 0x03);
+                    break;
+                case 0x03:
+                    BC++;
+                    break;
+                case 0x13:
+                    DE++;
+                    break;
+                case 0x23:
+                    HL++;
+                    break;
+                case 0x33:
+                    sp++;
+                    break;
+                case 0x0b:
+                    BC--;
+                    break;
+                case 0x1b:
+                    DE--;
+                    break;
+                case 0x2b:
+                    HL--;
+                    break;
+                case 0x3b:
+                    sp--;
+                    break;
+                case var o when (o & 0xc0) >> 6 == 0xa:
+                    //ALU
+                    ALU(op);
+                    break;
                 default:
                     throw new NotImplementedException($"The op code {op:X2} has not been implemented yet.");
             }
            
         }
+        private void ALU(byte op)
+        {
+            switch(op&0x38 >> 3)
+            {
+                //ADD
+                case 0:
+                    break;
+                //ADC
+                case 1:
+                    break;
+                //SUB
+                case 2:
+                    break;
+                //SBC
+                case 3:
+                    break;
+                //AND
+                case 4:
+                    break;
+                //XOR
+                case 5:
+                    break;
+                //OR
+                case 6:
+                    break;
+                //cp
+                case 7:
+                    break;
+            }
+        }
+
+        private void LDr(int v, byte a)
+        {
+            mmu.wb(Reg16Rp2(v), a);
+        }
+        private void LDr(byte a, int v)
+        {
+            var b = mmu.rb((ushort)v);
+            a = b;
+        }
+
         private void AddHL(ushort v)
         {
             subtract = false;
+
+            var cachedResult = (HL & 0xffff) + (v & 0xffff);
             halfCarry = (HL & 0xfff) + (v & 0xfff) > 0xfff;
-            carry = (HL & 0xffff) + (v & 0xffff) > 0xffff;
-            HL += v;
+            carry = cachedResult > 0xffff;
+
+            HL += (ushort)cachedResult;
         }
 
         private ushort Reg16Rp(int v)
@@ -227,29 +307,40 @@ namespace GB.Emulator
                 3 => sp
             };
         }
-
+        private ushort Reg16Rp2(int v)
+        {
+            return v switch
+            {
+                0 => BC,
+                1 => DE,
+                2 => HL,
+                3 => AF
+            };
+        }
         private void Ld16(ushort reg, ushort addr)
         {
             switch(reg)
             {
                 case 0:
-                    BC = NextWord();
+                    BC = addr;
                     break;
                 case 1:
-                    DE = NextWord();
+                    DE = addr;
                     break;
                 case 2:
-                    HL = NextWord();
+                    HL = addr;
                     break;
                 case 3:
-                    sp = NextWord();
+                    sp = addr;
                     break;
             }
         }
 
         private ushort NextWord()
         {
-            return mmu.rw(pc++);
+            var word = mmu.rw(pc++);
+            pc++;
+            return word; 
         }
         private void Ld(byte op)
         {

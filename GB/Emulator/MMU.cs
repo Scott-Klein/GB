@@ -58,14 +58,17 @@ namespace GB.Emulator
         {
             return this.rb((ushort)addr);
         }
-        public byte rw(ushort addr)
+
+        public ushort rw(ushort addr)
         {
-            return 0;
+            return (ushort)((rb(addr + 1) << 8) | rb(addr));
         }
-        public byte rw(int addr)
+
+        public ushort rw(int addr)
         {
             return rw((ushort)addr);
         }
+
         public void wb(ushort addr, byte value)
         {
             switch(addr)
