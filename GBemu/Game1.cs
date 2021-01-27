@@ -41,7 +41,7 @@ namespace GBemu
             this._graphics.PreferredBackBufferHeight = GAMEBOY_HEIGHT*6;
             this._graphics.ApplyChanges();
             GBVideo = new Texture2D(GraphicsDevice, GAMEBOY_WIDTH, GAMEBOY_HEIGHT);
-
+            gameBoy.Run();
             
         }
 
@@ -50,6 +50,7 @@ namespace GBemu
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             GBVideo = new Texture2D(this.GraphicsDevice, GAMEBOY_WIDTH, GAMEBOY_HEIGHT, false, SurfaceFormat.Color);
             // TODO: use this.Content to load your game content here
+            gameBoy = new GameBoy(@"c:\roms\Tetris (W) (V1.1) [!].gb");
         }
 
         /// <summary>
@@ -84,13 +85,7 @@ namespace GBemu
         /// </summary>
         private void FillBufferFromEmulator()
         {
-            var gbScreen = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
-            for (int i = 0; i < gbScreen.Length; i++)
-            {
-                gbScreen[i] = new Color(140, 34, 137, 255);
-            }
-
-            GBVideo.SetData(gbScreen);
+            GBVideo.SetData(this.gameBoy.Pixels);
         }
 
 

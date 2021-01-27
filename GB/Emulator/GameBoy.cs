@@ -8,18 +8,31 @@ namespace Emulator
     public class GameBoy
     {
         private readonly Cartridge cart;
+        private readonly PPU ppu;
+        private readonly CPU cpu;
+        private readonly MMU memory;
+
+        public bool PowerSwitch { get; set; }
         public Cartridge Cart { get { return this.cart; }  }
+        public int[] Pixels { get { return this.ppu.Pixels;  } }
 
         public GameBoy(string rom)
         {
             this.cart = new Cartridge(rom);
             //build the hardware and load the cartridge/
+            this.ppu = new PPU();
+            this.memory = new MMU(this.cart, this.ppu);
+            this.cpu = new CPU(this.memory);
+            this.PowerSwitch = true;
         }
 
 
         public void Run()
         {
-
+            while (this.PowerSwitch)
+            {
+                this.cpu.Tick();
+            }
         }
     }
 }

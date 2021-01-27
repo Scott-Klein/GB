@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace GB.Emulator
 {
-    public class PPU
+    public class Joypad
     {
-        public byte[] VRAM { get; set; }
+        public byte P1;
     }
 }

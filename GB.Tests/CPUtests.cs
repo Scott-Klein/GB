@@ -15,7 +15,10 @@ namespace GB.Tests
         [SetUp]
         public void Setup()
         {
-            cpu = new CPU();
+            Cartridge cartridge = new Cartridge(TestCartsPaths.tetris);
+            PPU pPU = new PPU();
+            MMU mMU = new MMU(cartridge, pPU);
+            cpu = new CPU(mMU);
             cpu.AF = 0xC58d;
             cpu.BC = 0xC58d;
             cpu.DE = 0xC58d;
