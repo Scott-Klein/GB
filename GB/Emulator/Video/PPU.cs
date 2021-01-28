@@ -36,22 +36,14 @@
 
         internal void WriteByte(ushort addr, byte value)
         {
-            if (addr >= VRAM_START && addr <= VRAM_END)
-            {
-                VRAM[addr & VRAM_SIZE] = value;
-            }
-            else if (addr >= OAM_START & addr <= OAM_END)
-            {
-                OAM[addr & OAM_SIZE] = value;
-            }
             switch (addr)
             {
                 case var a when a >= VRAM_START && a <= VRAM_END:
-                    VRAM[addr & VRAM_SIZE] = value;
+                    VRAM[addr & VRAM_SIZE-1] = value;
                     break;
 
                 case var a when a >= OAM_START && a <= VRAM_END:
-                    OAM[addr & OAM_SIZE] = value;
+                    OAM[addr & OAM_SIZE-1] = value;
                     break;
 
                 case 0xff40:

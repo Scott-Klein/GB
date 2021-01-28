@@ -17,16 +17,25 @@ namespace GB.Emulator
         private bool bootEnable;
         private byte[] RAM;
         private byte[] HRAM; //zero-page ram.
-        public MMU(Cartridge cartridge, PPU ppu)
+        public MMU(Cartridge cartridge, PPU ppu, bool testing = false, byte testInstruction = 0x0)
         {
             RAM = new byte[0x1fff];
             HRAM = new byte[0x7f];
             rom = cartridge;
             this.ppu = ppu;
             
+
             try
             {
-                this.bootRom = File.ReadAllBytes("DMG_ROM.bin");
+                if (!testing)
+                {
+                    this.bootRom = File.ReadAllBytes("DMG_ROM.bin");
+                }
+                else
+                {
+                    this.bootRom = new byte[1];
+                    this.bootRom[0] = testInstruction;
+                }
                 bootEnable = true;
             }
             catch (Exception)
@@ -34,6 +43,8 @@ namespace GB.Emulator
                 bootEnable = false;
             }
         }
+
+
 
         public byte rb(ushort addr)
         {
@@ -44,7 +55,7 @@ namespace GB.Emulator
             return addr switch
             {
                 var a when a <= 0x7fff => rom.ReadByte(addr),
-                var a when a <= 0x9fff => ppu.VRAM[addr & 0x1fff],
+                var a when a <= 0x9fff => ppu.VRAM[(addr & 0x1fff) % ppu.VRAM.Length],
                 var a when a <= 0xbfff => rom.ReadByte(addr),
                 var a when a <= 0xfdff => RAM[addr & 0x1fff],
                 var a when a <= 0xfe9f => ppu.OAM[addr & 0xff],//[FE00-FE9F] Graphics: sprite information: 
@@ -69,6 +80,7 @@ namespace GB.Emulator
             return rw((ushort)addr);
         }
 
+
         public void wb(ushort addr, byte value)
         {
             switch(addr)
@@ -87,12 +99,16 @@ namespace GB.Emulator
                 case 0xff50:
                     bootEnable = false;
                     break;
-                    
+                case var a when a >= 0x8000 && a <= 0x9fff:
+                    ppu.WriteByte(addr, value);
+                    break;
+                default:
+                    throw new NotImplementedException($"{addr}  :  Address isn't able to be written to.");
             }
         }
-        public void WriteWord(ushort addr, ushort value)
+        public void WriteWord(int addr, ushort value)
         {
-
+            throw new NotImplementedException();
         }
 
     }
