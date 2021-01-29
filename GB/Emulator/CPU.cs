@@ -46,6 +46,7 @@ namespace GB.Emulator
             clock.T += t;
         }
 
+
         public void Tick()
         {
             //fetch;
@@ -225,7 +226,7 @@ namespace GB.Emulator
                 case 0x16:
                 case 0x26:
                 case 0x36:
-                    Registers.SetRegById((0xf & op) << 1, NextByte());
+                    Registers.SetRegById((op>>4)<<1, NextByte());
                     break;
                 case 0xc1:
                 case 0xd1:
@@ -264,6 +265,12 @@ namespace GB.Emulator
             byte op = mmu.rb(Registers.PC++);
             switch (op)
             {
+                case <= 0x7:
+                    Registers.SetRegById(op, ControlUnit.RLC(Registers.GetRegById(op)));
+                    break;
+                case <= 0xf:
+                    Registers.SetRegById(op-8, ControlUnit.RRC(Registers.GetRegById(op-8)));
+                    break;
                 case var o when o >= 0x40 && o <= 0x7f:
                     ControlUnit.Bit((o >> 4), Registers.GetRegById(o & 0x7));
                     break;

@@ -37,6 +37,7 @@ namespace GB.Emulator
         ushort ReadWordRegisterPair2(int regId);
         ushort ReadWordRegisterPair3(int regId);
         byte RegisterPair2Indirect(int id);
+        void SetAllRegs(byte value);
 
     }
 
@@ -300,6 +301,18 @@ namespace GB.Emulator
         void WriteByte(ushort add, byte value)
         {
             mmu.wb(add, value);
+        }
+
+        public void SetAllRegs(byte value)
+        {
+            this.A = value;
+            this.B = value;
+            this.C = value;
+            this.D = value;
+            this.E = value;
+            this.F = value;
+            this.H = value;
+            this.L = value;
         }
     }
 }

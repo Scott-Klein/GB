@@ -95,6 +95,9 @@ namespace GB.Emulator
         {
             switch(addr)
             {
+                case var a when a >= 0xc000 && a <= 0xdfff:
+                    RAM[addr & 0x1fff] = value;
+                    break;
                 case var a when a >= 0xfe00 && a <= 0xfe9f:
                     ppu.WriteByte(addr, value);
                     break;

@@ -17,6 +17,8 @@ namespace GB.Emulator
         void XOR(byte value);
         void Add16(ushort rhs);
         void Jr(byte op, sbyte offset);
+        byte RLC(byte value);
+        byte RRC(byte value);
     }
     public class ControlUnit : IControlUnit
     {
@@ -115,6 +117,26 @@ namespace GB.Emulator
         {
             var result = ReadWord(Registers.SP);
             Registers.SP += 2;
+            return result;
+        }
+
+        public byte RLC(byte value)
+        {
+            byte result = (byte)(value << 1 | value >> 7);
+            Registers.Zero = result == 0;
+            Registers.Carry = value == 0x80;
+            Registers.Subtract = false;
+            Registers.HalfCarry = false;
+            return result;
+        }
+
+        public byte RRC(byte value)
+        {
+            byte result = (byte)(value >> 1 | value << 7);
+            Registers.Zero = result == 0;
+            Registers.Carry = (value & 1) == 1;
+            Registers.Subtract = false;
+            Registers.HalfCarry = false;
             return result;
         }
     }

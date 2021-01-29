@@ -48,5 +48,68 @@ namespace GB.Tests
             Assert.That(regs.HL, Is.EqualTo(testword2));
             Assert.That(regs.AF, Is.EqualTo(testword1));
         }
+
+
+        /// <summary>
+        /// All forms of instruction 0x06, 0x16, 0x26, 0x36
+        /// Compute correctly.
+        /// </summary>
+        [Test]
+        public void LDxd8()
+        {
+            mmu.WriteWord(0xc000, 0xffff);
+            mmu.WriteWord(0xc002, 0xffff);
+            mmu.WriteWord(0xc006, 0xffff);
+            regs.PC = 0xc000;
+
+            cpu.Tick(0x06);
+            Assert.That(regs.B, Is.EqualTo(0xff));
+
+            cpu.Tick(0x16);
+            Assert.That(regs.D, Is.EqualTo(0xff));
+
+            cpu.Tick(0x26);
+            Assert.That(regs.H, Is.EqualTo(0xff));
+
+            regs.HL = 0xc006;
+            Assert.That(regs.GetRegById(6), Is.EqualTo(0xff));
+        }
+
+        [Test]
+
+        public void RLC()
+        {
+            cpu = new CPU(mmu, regs);
+            regs.PC = 0xc000;
+            regs.SetAllRegs(0x85); //put the test data into memory.
+            for (int i = 0; i < 8; i++)
+            {
+                mmu.wb((ushort)(0xc000 + i), (byte)i); // push the RLC instructions into memory.
+            }
+
+            cpu.Tick(0xcb);
+            Assert.That(regs.B, Is.EqualTo(0xb));
+            cpu.Tick(0xcb);
+            Assert.That(regs.C, Is.EqualTo(0xb));
+            cpu.Tick(0xcb);
+            Assert.That(regs.D, Is.EqualTo(0xb));
+            cpu.Tick(0xcb);
+            Assert.That(regs.E, Is.EqualTo(0xb));
+            cpu.Tick(0xcb);
+            Assert.That(regs.H, Is.EqualTo(0xb));
+            cpu.Tick(0xcb);
+            Assert.That(regs.L, Is.EqualTo(0xb));
+
+            //the HL register
+            mmu.wb(0xc150, 0x85);
+            regs.HL = 0xc150;
+
+            cpu.Tick(0xcb);
+            Assert.That(mmu.rb(0xc150), Is.EqualTo(0xb));
+
+            //Finally a register.
+            cpu.Tick(0xcb);
+            Assert.That(regs.A, Is.EqualTo(0xb));
+        }
     }
 }
