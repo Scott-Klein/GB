@@ -4,10 +4,10 @@
     {
         private const int VRAM_START = 0x8000;
         private const int VRAM_END = 0x9fff;
-        private const int VRAM_SIZE = 0x1fff;
+        private const int VRAM_SIZE = 0x2000;
         private const int OAM_START = 0xfe00;
         private const int OAM_END = 0xfe9f;
-        private const int OAM_SIZE = 0x9f;
+        private const int OAM_SIZE = 0xa0;
         private const int GB_WIDTH = 160;
         private const int GB_HEIGHT = 144;
         public byte[] VRAM { get; }
@@ -39,11 +39,11 @@
             switch (addr)
             {
                 case var a when a >= VRAM_START && a <= VRAM_END:
-                    VRAM[addr & VRAM_SIZE-1] = value;
+                    VRAM[addr - VRAM_START] = value;
                     break;
 
                 case var a when a >= OAM_START && a <= VRAM_END:
-                    OAM[addr & OAM_SIZE-1] = value;
+                    OAM[addr - OAM_START] = value;
                     break;
 
                 case 0xff40:

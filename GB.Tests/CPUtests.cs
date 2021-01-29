@@ -10,71 +10,43 @@ namespace GB.Tests
 {
     class CPUtests
     {
-        Cartridge cartridge;
         CPU cpu;
-        PPU pPU;
-        MMU mMU;
-
+        IRegisters regs;
+        MMU mmu;
         [SetUp]
-        public void Setup()
+        public void SetUp()
         {
-            cartridge = new Cartridge(TestCartsPaths.tetris);
-            pPU = new PPU();
-            mMU = new MMU(cartridge, pPU);
-            cpu = new CPU(mMU);
-            cpu.AF = 0xC58d;
-            cpu.BC = 0xC58d;
-            cpu.DE = 0xC58d;
-            cpu.HL = 0xc58d;
+            mmu = new MMU();
+            regs = new Registers(mmu);
+            cpu = new CPU(mmu, regs);
+            regs.SP--;
         }
 
         [Test]
-        public void All_registers_combine()
+        public void POPtoWordRegister()
         {
-            Assert.That(cpu.A, Is.EqualTo(0xc5));
-            Assert.That(cpu.F, Is.EqualTo(0x8d));
+            ushort testword1 = 0x1234;
+            ushort testword2 = 0x5678;
+            ushort testword3 = 0x9abc;
+            ushort testword4 = 0xdef0;
+            regs.BC = testword1;
+            cpu.Tick(0xc5);
+            regs.BC = testword2;
+            cpu.Tick(0xc5);
+            regs.BC = testword3;
+            cpu.Tick(0xc5);
+            regs.BC = testword4;
+            cpu.Tick(0xc5);
 
-            Assert.That(cpu.B == 0xc5);
-            Assert.That(cpu.D == 0xc5);
-            Assert.That(cpu.H == 0xc5);
+            cpu.Tick(0xc1);
+            cpu.Tick(0xd1);
+            cpu.Tick(0xe1);
+            cpu.Tick(0xf1);
 
-            Assert.That(cpu.C == 0x8d);
-            Assert.That(cpu.E == 0x8d);
-            Assert.That(cpu.L == 0x8d);
+            Assert.That(regs.BC, Is.EqualTo(testword4));
+            Assert.That(regs.DE, Is.EqualTo(testword3));
+            Assert.That(regs.HL, Is.EqualTo(testword2));
+            Assert.That(regs.AF, Is.EqualTo(testword1));
         }
-
-        [Test]
-        public void IncReg()
-        {
-            cpu = CreateWithTestInstruction(0xc);
-            var cached = cpu.C;
-            cpu.Tick();
-            Assert.That(cpu.C, Is.EqualTo(cached + 1));
-            Assert.That(cpu.Zero, Is.Not.True);
-        }
-
-        [Test]
-        public void BootRomInstructionsImplemented()
-        {
-            int count = 0;
-
-            while (count++ < 1000 && cpu.PC <= 0x150)
-            {
-                cpu.Tick();
-            }
-            if (count == 0)
-            {
-                Assert.Fail("Ran out of time to execute the boot rom");
-            }
-            Assert.Pass();
-        }
-
-        public CPU CreateWithTestInstruction(byte op)
-        {
-            MMU m = new MMU(cartridge, pPU, true, 0xc);
-            var cpu = new CPU(m);
-            return cpu;
-        }
-
     }
 }

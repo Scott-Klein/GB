@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using GB.Emulator;
 using NUnit.Framework;
-namespace GB.Tests
+namespace GB.Tests.Cart
 {
     class CartMbc1Tests
     {

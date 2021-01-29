@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GB.Tests
+namespace GB.Tests.Cart
 {
     class CartMbc3Tests
     {

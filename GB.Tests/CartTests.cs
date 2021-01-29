@@ -2,7 +2,7 @@ using GB.Emulator;
 using GB.Emulator.Cart;
 using NUnit.Framework;
 
-namespace GB.Tests
+namespace GB.Tests.Cart
 {
     public class CartridgeTests
     {

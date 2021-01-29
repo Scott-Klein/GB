@@ -17,13 +17,18 @@ namespace GB.Emulator
         private bool bootEnable;
         private byte[] RAM;
         private byte[] HRAM; //zero-page ram.
+        private byte[] IOregisters;
+
+        public MMU()
+        {
+            InitialiseMemory();
+        }
         public MMU(Cartridge cartridge, PPU ppu, bool testing = false, byte testInstruction = 0x0)
         {
-            RAM = new byte[0x1fff];
-            HRAM = new byte[0x7f];
+            InitialiseMemory();
             rom = cartridge;
             this.ppu = ppu;
-            
+
 
             try
             {
@@ -44,7 +49,12 @@ namespace GB.Emulator
             }
         }
 
-
+        private void InitialiseMemory()
+        {
+            RAM = new byte[0x2000];
+            HRAM = new byte[0x80];
+            IOregisters = new byte[0x80];
+        }
 
         public byte rb(ushort addr)
         {
@@ -58,12 +68,12 @@ namespace GB.Emulator
                 var a when a <= 0x9fff => ppu.VRAM[(addr & 0x1fff) % ppu.VRAM.Length],
                 var a when a <= 0xbfff => rom.ReadByte(addr),
                 var a when a <= 0xfdff => RAM[addr & 0x1fff],
-                var a when a <= 0xfe9f => ppu.OAM[addr & 0xff],//[FE00-FE9F] Graphics: sprite information: 
+                var a when a <= 0xfe9f => ppu.OAM[addr & 0xff],//[FE00-FE9F] Graphics: sprite information:
                 var a when a == 0xff00 => Joy.P1,
                 var a when a >= 0xff04 && a <= 0xff07 => timer.ReadByte(addr),
-                var a when a >= 0xff80 && a <= 0xffff => HRAM[0x7f & addr]
+                var a when a >= 0xff80 && a <= 0xfffe => HRAM[0x7f & addr]
             };
-            return 0;
+            throw new NotImplementedException();
         }
         public byte rb(int addr)
         {
@@ -102,13 +112,20 @@ namespace GB.Emulator
                 case var a when a >= 0x8000 && a <= 0x9fff:
                     ppu.WriteByte(addr, value);
                     break;
+                case var a when a >= 0xff00 && a <= 0xff7f:
+                    IOregisters[addr & 0x00ff] = value;
+                    break;
+                case var a when a >= 0xff80 && a <= 0xfffe:
+                    HRAM[0x7f & addr] = value;
+                    break;
                 default:
                     throw new NotImplementedException($"{addr}  :  Address isn't able to be written to.");
             }
         }
         public void WriteWord(int addr, ushort value)
         {
-            throw new NotImplementedException();
+            wb((ushort)(addr + 1), (byte)(value >> 8)); //msb goes one address higher
+            wb((ushort)(addr), (byte)(0x00ff & value)); //lsb goes to the address.
         }
 
     }
