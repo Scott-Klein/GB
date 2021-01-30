@@ -13,6 +13,8 @@ namespace GB.Emulator
         PPU ppu;
         Joypad Joy;
         Timer timer;
+        public byte IF;
+        public byte IE;
         private byte[] bootRom;
         private bool bootEnable;
         private byte[] RAM;
@@ -28,7 +30,7 @@ namespace GB.Emulator
             InitialiseMemory();
             rom = cartridge;
             this.ppu = ppu;
-
+            ppu.SetMMU(this);
 
             try
             {
@@ -64,12 +66,16 @@ namespace GB.Emulator
             }
             return addr switch
             {
+                0xff0f => (byte)(0xe0 | IF),
+                0xffff => IE,
                 var a when a <= 0x7fff => rom.ReadByte(addr),
                 var a when a <= 0x9fff => ppu.VRAM[(addr & 0x1fff) % ppu.VRAM.Length],
                 var a when a <= 0xbfff => rom.ReadByte(addr),
                 var a when a <= 0xfdff => RAM[addr & 0x1fff],
                 var a when a <= 0xfe9f => ppu.OAM[addr & 0xff],//[FE00-FE9F] Graphics: sprite information:
-                var a when a == 0xff00 => Joy.P1,
+                0xff00 => Joy.P1,
+                0xff44 => ppu.ReadByte(addr),
+                0xff50 => Convert.ToByte(bootEnable),
                 var a when a >= 0xff04 && a <= 0xff07 => timer.ReadByte(addr),
                 var a when a >= 0xff80 && a <= 0xfffe => HRAM[0x7f & addr]
             };
@@ -79,7 +85,6 @@ namespace GB.Emulator
         {
             return this.rb((ushort)addr);
         }
-
         public ushort rw(ushort addr)
         {
             return (ushort)((rb(addr + 1) << 8) | rb(addr));
@@ -95,6 +100,12 @@ namespace GB.Emulator
         {
             switch(addr)
             {
+                case 0xff0f:
+                    IF = value;
+                    break;
+                case 0xffff:
+                    IE = value;
+                    break;
                 case var a when a >= 0xa000 && a <= 0xbfff:
                     //Cart ram?
                     rom.WriteByte(addr, value);
@@ -105,28 +116,26 @@ namespace GB.Emulator
                 case var a when a >= 0xfe00 && a <= 0xfe9f:
                     ppu.WriteByte(addr, value);
                     break;
-                case 0xff40:
-                case 0xff41:
-                case 0xff45:
+                case var a when a >= 0xff40 && a <= 0xff4b:
                     ppu.WriteByte(addr, value);
                     break;
                 case 0xff00:
-                    Joy.P1 = value; ;
+                    Joy.P1 = value;
                     break;
                 case 0xff50:
-                    bootEnable = false;
+                    bootEnable = value > 0;
                     break;
                 case var a when a >= 0x8000 && a <= 0x9fff:
                     ppu.WriteByte(addr, value);
                     break;
-                case var a when a >= 0xff00 && a <= 0xff7f:
-                    IOregisters[addr & 0x00ff] = value;
-                    break;
                 case var a when a >= 0xff80 && a <= 0xfffe:
                     HRAM[0x7f & addr] = value;
                     break;
+                case var a when a >= 0xff00 && a <= 0xff7f:
+                    IOregisters[addr & 0x00ff] = value;
+                    break;
                 default:
-                    throw new NotImplementedException($"{addr}  :  Address isn't able to be written to.");
+                    throw new NotImplementedException($"{addr:X2}  :  Address isn't able to be written to.");
             }
         }
         public void WriteWord(int addr, ushort value)

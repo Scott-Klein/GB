@@ -8,7 +8,8 @@ namespace GB.Emulator
         IControlUnit ControlUnit;
         private int m;
         private int t;
-
+        private bool IME;
+        private int pendingIME;
         private Clock clock;
         private MMU mmu;
         public CPU(MMU mmu)
@@ -49,6 +50,8 @@ namespace GB.Emulator
 
         public void Tick()
         {
+            //
+            InterruptRoutine();
             //fetch;
             var op = NextByte();
             Dispatch(op);
@@ -56,7 +59,45 @@ namespace GB.Emulator
             clock.M++;
             clock.T += t;
         }
+        private void InterruptRoutine()
+        {
+            if (!IME && pendingIME-- == 0)
+            {
+                IME = true;
+            }
 
+            //Jump to vector
+            if (IME && (mmu.IE & mmu.IF) != 0)
+            {
+
+                ControlUnit.Push(Registers.PC);
+                switch (mmu.IF)
+                {
+                    case var f when (f & mmu.IE & 0x1) == 0x1:
+                        //vblank
+                        Registers.PC = 0x40;
+                        break;
+                    case var f when (f & mmu.IE & 0x2) == 0x2:
+                        //LCD STAT
+                        Registers.PC = 0x48;
+                        break;
+                    case var f when (f & mmu.IE & 0x4) == 0x4:
+                        Registers.PC = 0x50;
+                        //Timer Interrupt
+                        break;
+                    case var f when (f & mmu.IE & 0x8) == 0x8:
+                        Registers.PC = 0x58;
+                        //serial
+                        break;
+                    case var f when (f & mmu.IE & 0x10) == 0x10:
+                        Registers.PC = 0x60;
+                        //joypad.
+                        break;
+                }
+            }
+
+
+        }
         private void Dispatch(byte op)
         {
             switch (op)
@@ -286,6 +327,19 @@ namespace GB.Emulator
                     break;
                 case 0x76:
                     throw new Exception("HALT WHO GOES THERE");
+                    break;
+                case 0xfb:
+                    //Set Interrupt master enable.
+                    pendingIME = 1;
+                    break;
+                case 0xf3:
+                    //Disable interrupt;
+                    IME = false;
+                    break;
+                case 0xd9:
+                    //RETI
+                    pendingIME = 1;
+                    ControlUnit.RET();
                     break;
                 case var o when o >= 0x40 && o <= 0x7f:
                     var regData = Registers.GetRegById(0x7 & o);
