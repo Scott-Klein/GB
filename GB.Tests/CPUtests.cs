@@ -76,7 +76,6 @@ namespace GB.Tests
         }
 
         [Test]
-
         public void RLC()
         {
             cpu = new CPU(mmu, regs);
@@ -110,6 +109,17 @@ namespace GB.Tests
             //Finally a register.
             cpu.Tick(0xcb);
             Assert.That(regs.A, Is.EqualTo(0xb));
+        }
+
+        [Test]
+        public void RRC()
+        {
+            cpu = new CPU(mmu, regs);
+            regs.PC = 0xc000;
+            regs.B = 0x85;
+            mmu.wb((ushort)0xc000, 0x8);
+            cpu.Tick(0xcb);
+            Assert.That(regs.B, Is.EqualTo(0xc2));
         }
     }
 }

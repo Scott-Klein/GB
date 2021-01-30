@@ -61,17 +61,28 @@ namespace GB.Emulator
         {
             switch (op)
             {
+                //nop;
                 case 0:
-                    //nop;
                     break;
 
                 case 0xcb:
                     DispatchCb();
                     break;
 
+                //LD(nn),sp
                 case 0x8:
-                    //LD(nn),sp
+
                     mmu.WriteWord(NextWord(), Registers.SP);
+                    break;
+
+                //RLCA
+                case 0x07:
+                    Registers.A = ControlUnit.RLA(Registers.A);
+                    break;
+
+                //RLA
+                case 0x17:
+                    Registers.A = ControlUnit.RLA(Registers.A);
                     break;
 
                 case 0x10:
@@ -149,9 +160,9 @@ namespace GB.Emulator
                 case 0xf0:
                     Registers.A = ReadByte(0xff00 + NextByte());
                     break;
-                case var o when (o & 0xa8) == 0xa8:
-                    ControlUnit.XOR(Registers.GetRegById(o & 0x7));
-                    break;
+                //case var o when (o & 0xa8) == 0xa8:
+                //    ControlUnit.XOR(Registers.GetRegById(o & 0x7));
+                //    break;
                 case 0x0e:
                 case 0x1e:
                 case 0x2e:
@@ -170,6 +181,12 @@ namespace GB.Emulator
                 case 0x3c:
                     ControlUnit.IncReg(op >> 3);
                     break;
+                case 0x0d:
+                case 0x1d:
+                case 0x2d:
+                case 0x3d:
+                    ControlUnit.DecReg(op >> 3);
+                    break;
                 case 0x70:
                 case 0x71:
                 case 0x72:
@@ -181,6 +198,9 @@ namespace GB.Emulator
                     break;
                 case 0xcd:
                     ControlUnit.Call(NextWord());
+                    break;
+                case 0xc9:
+                    ControlUnit.RET();
                     break;
                 case 0x48:
                 case 0x49:
@@ -240,6 +260,37 @@ namespace GB.Emulator
                 case 0xf5:
                     ControlUnit.Push(Registers.ReadWordRegisterPair2((op >> 4) & 3));
                     break;
+                case 0x05:
+                case 0x15:
+                case 0x25:
+                case 0x35:
+                    ControlUnit.DecReg((op >> 4) << 1);
+                    break;
+                case 0x04:
+                case 0x14:
+                case 0x24:
+                case 0x34:
+                    ControlUnit.IncReg((op >> 4) << 1);
+                    break;
+                case 0xfe:
+                    ControlUnit.CP(NextByte());
+                    break;
+                case var o when o >= 0xa8 && o <= 0xaf:
+                    ControlUnit.XOR(Registers.GetRegById(o & 0x7));
+                    break;
+                case 0xea:
+                    WriteByte(NextWord(), Registers.A);
+                    break;
+                case 0xfa:
+                    Registers.A = NextByte();
+                    break;
+                case 0x76:
+                    throw new Exception("HALT WHO GOES THERE");
+                    break;
+                case var o when o >= 0x40 && o <= 0x7f:
+                    var regData = Registers.GetRegById(0x7 & o);
+                    Registers.SetRegById((o >> 3) & 0x7, regData);
+                    break;
                 default:
                     throw new NotImplementedException($"The op code {op:X2} has not been implemented yet.");
             }
@@ -263,16 +314,53 @@ namespace GB.Emulator
         private void DispatchCb()
         {
             byte op = mmu.rb(Registers.PC++);
+            var regId = op & 0x7;
+            byte r8Value = Registers.GetRegById(regId);
             switch (op)
             {
+                //RLC
                 case <= 0x7:
-                    Registers.SetRegById(op, ControlUnit.RLC(Registers.GetRegById(op)));
+                    Registers.SetRegById(regId, ControlUnit.RLC(r8Value));
                     break;
+                //RRC
                 case <= 0xf:
-                    Registers.SetRegById(op-8, ControlUnit.RRC(Registers.GetRegById(op-8)));
+                    Registers.SetRegById(regId, ControlUnit.RRC(r8Value));
                     break;
-                case var o when o >= 0x40 && o <= 0x7f:
-                    ControlUnit.Bit((o >> 4), Registers.GetRegById(o & 0x7));
+                //RL
+                case <= 0x17:
+                    Registers.SetRegById(regId, ControlUnit.RL(r8Value));
+                    break;
+                //RR
+                case <= 0x1f:
+                    Registers.SetRegById(regId, ControlUnit.RR(r8Value));
+                    break;
+                //SLA
+                case <= 0x27:
+                    Registers.SetRegById(regId, ControlUnit.SLA(r8Value));
+                    break;
+                //SRA
+                case <= 0x2f:
+                    Registers.SetRegById(regId, ControlUnit.SRA(r8Value));
+                    break;
+                //SWAP
+                case <= 0x37:
+                    Registers.SetRegById(regId, ControlUnit.SWAP(r8Value));
+                    break;
+                //SRL
+                case <= 0x3f:
+                    Registers.SetRegById(regId, ControlUnit.SRL(r8Value));
+                    break;
+                //BIT
+                case <= 0x7f:
+                    ControlUnit.Bit(((op >> 3) & 0x7), r8Value);
+                    break;
+                //RES
+                case <= 0xbf:
+                    ControlUnit.RES(((op >> 3) & 0x7), r8Value);
+                    break;
+                //SET
+                case <= 0xff:
+                    ControlUnit.SET(((op >> 3) & 0x7), r8Value);
                     break;
                 default:
                     throw new NotImplementedException($"The op code {op:X2} has not been implemented yet.");

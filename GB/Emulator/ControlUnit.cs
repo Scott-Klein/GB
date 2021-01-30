@@ -13,12 +13,25 @@ namespace GB.Emulator
         void Push(ushort value);
         ushort POP();
         void IncReg(int regId);
+        void DecReg(int regId);
         void Bit(int n, byte reg);
         void XOR(byte value);
         void Add16(ushort rhs);
         void Jr(byte op, sbyte offset);
         byte RLC(byte value);
         byte RRC(byte value);
+        byte RR(byte value);
+        byte RL(byte value);
+        byte SLA(byte value);
+        byte SRA(byte value);
+        byte SWAP(byte value);
+        byte SRL(byte value);
+        byte RES(int n, byte value);
+        byte SET(int n, byte value);
+        byte RLA(byte value);
+        byte RLCA(byte value);
+        void RET();
+        void CP(int value);
     }
     public class ControlUnit : IControlUnit
     {
@@ -80,6 +93,19 @@ namespace GB.Emulator
             Registers.SetRegById(regId, result);
         }
 
+        public void DecReg(int regId)
+        {
+            byte result = Registers.GetRegById(regId);
+            result--;
+
+            // Z 1 H -
+            Registers.Zero = result == 0;
+            Registers.Subtract = true;
+            Registers.HalfCarry = (result & 0xf) == 0xf;
+
+            Registers.SetRegById(regId, result);
+        }
+
         public void Jr(byte op, sbyte offset)
         {
             if (op == 0x18 || CC(op))
@@ -124,7 +150,7 @@ namespace GB.Emulator
         {
             byte result = (byte)(value << 1 | value >> 7);
             Registers.Zero = result == 0;
-            Registers.Carry = value == 0x80;
+            Registers.Carry = (value & 0x80) == 0x80;
             Registers.Subtract = false;
             Registers.HalfCarry = false;
             return result;
@@ -138,6 +164,132 @@ namespace GB.Emulator
             Registers.Subtract = false;
             Registers.HalfCarry = false;
             return result;
+        }
+
+        public byte RR(byte value)
+        {
+            byte preservedCarry = Convert.ToByte(Registers.Carry);
+
+            byte result = (byte)(value >> 1 | preservedCarry);
+
+            Registers.Zero = result == 0;
+            Registers.Carry = (value & 1) == 1;
+            Registers.Subtract = false;
+            Registers.HalfCarry = false;
+
+            return result;
+        }
+
+        public byte RL(byte value)
+        {
+            byte preservedCarry = Convert.ToByte(Registers.Carry);
+
+            byte result = (byte)(value << 1 | preservedCarry);
+
+            Registers.Zero = result == 0;
+            Registers.Carry = (value & 1) == 1;
+            Registers.Subtract = false;
+            Registers.HalfCarry = false;
+
+            return result;
+        }
+
+        public byte SLA(byte value)
+        {
+            byte result = (byte)(value << 1);
+
+            Registers.Zero = result == 0;
+            Registers.Carry = (value & 0x80) == 0x80;
+            Registers.Subtract = false;
+            Registers.HalfCarry = false;
+
+            return result;
+        }
+
+        public byte SRA(byte value)
+        {
+            byte result = (byte)(value >> 1);
+
+            Registers.Zero = result == 0;
+            Registers.Carry = (value & 0x1) == 1;
+            Registers.Subtract = false;
+            Registers.HalfCarry = false;
+
+            return result;
+        }
+
+        public byte SWAP(byte value)
+        {
+            Registers.Zero = value == 0;
+            Registers.Subtract = false;
+            Registers.Carry = false;
+            Registers.HalfCarry = false;
+
+            return (byte)(value >> 4 | value << 4);
+        }
+
+        public byte SRL(byte value)
+        {
+            byte result = (byte)(value >> 1);
+
+            Registers.Carry = (value & 1) == 1;
+            Registers.Zero = result == 0;
+
+            Registers.Subtract = false;
+            Registers.HalfCarry = false;
+
+            return result;
+        }
+
+        public byte RES(int n, byte value)
+        {
+            var mask = 1 << n;
+            mask = ~mask;
+            return (byte)(mask & value);
+
+        }
+
+        public byte SET(int n, byte value)
+        {
+            var mask = 1 << n;
+            return (byte)(mask | value);
+        }
+
+        public byte RLA(byte value)
+        {
+            //preserve old carry as carry-in, and set new carry. zero everything else.
+            byte preservedCarry = Convert.ToByte(Registers.Carry);
+
+            Registers.Carry = (value & 0x80) == 0x80;
+            Registers.Zero = false;
+            Registers.HalfCarry = false;
+            Registers.Subtract = false;
+            return (byte)((value << 1) | preservedCarry);
+        }
+
+        public byte RLCA(byte value)
+        {
+            Registers.Zero = false;
+            Registers.HalfCarry = false;
+            Registers.Subtract = false;
+            Registers.Carry = (value & 0x80) == 0x80;
+
+            return (byte)((value << 1) | Convert.ToByte(Registers.Carry));
+        }
+
+        public void RET()
+        {
+            Registers.PC = POP();
+        }
+
+        public void CP(int value)
+        {
+            int result = Registers.A - value;
+
+            Registers.Zero = result == 0;
+            Registers.Subtract = true;
+            Registers.HalfCarry = (Registers.A & 0x0f) < (value & 0x0f);
+            Registers.Carry = Registers.A < result;
         }
     }
 }

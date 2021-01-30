@@ -95,6 +95,10 @@ namespace GB.Emulator
         {
             switch(addr)
             {
+                case var a when a >= 0xa000 && a <= 0xbfff:
+                    //Cart ram?
+                    rom.WriteByte(addr, value);
+                    break;
                 case var a when a >= 0xc000 && a <= 0xdfff:
                     RAM[addr & 0x1fff] = value;
                     break;
