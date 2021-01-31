@@ -1,4 +1,5 @@
 ﻿using System;
+using GB.Emulator.Video;
 
 namespace GB.Emulator
 {
@@ -75,11 +76,11 @@ namespace GB.Emulator
     {
         public byte Value { get; set; }
 
-        public bool LYC_LY_Check_6 { get; set; }
+        public bool LYC_Compare_Enable_6 { get; set; }
         public bool Mode2OAMcheckEnable_5 { get; set; }
         public bool Mode1VBlankcheckEnable_4 { get; set; }
         public bool Mode0HBlankCheckEnable_3 { get; set; }
-        public bool LY_LYC_Signal { get; set; }
+        public bool LY_Comparison_Signal { get; set; }
 
         public ScreenMode ScreenMode { get; set; }
     }
@@ -101,16 +102,27 @@ namespace GB.Emulator
         private byte SCX;
         private byte ScanLineC; // Causes an interrupt when ly and lyc match.
         private byte stat;
-
-        public int[] Pixels
+        public Render Renderer;
+        private byte scanLine;
+        public byte Scanline
         {
             get
             {
-                return this.pixels;
+                return LCDC.LCD_7 ? this.scanLine : 0x0; //if the lcd is off return 0x0
+            }
+            set
+            {
+                if (value == ScanLineC) // on increment only
+                {
+                    STAT.LY_Comparison_Signal = true;
+                    ModeUpdate(STAT.ScreenMode);
+                }
+                this.scanLine = value;
             }
         }
+
         private int Cycle;
-        private int[] pixels;
+
 
         public PPU()
         {
@@ -134,14 +146,14 @@ namespace GB.Emulator
                 //handle mode
                 L143();
             }
-            else if (Scanline != 153)// Modes are a little different here
+            else if (Scanline < 153)
             {
                 VBlank();
-
             }
-            else
+            else if (Scanline == 153)
             {
-                L153();
+                Cycle = 0;
+                ModeUpdate(ScreenMode.SearchOAMRAM);
             }
 
         }
@@ -153,60 +165,39 @@ namespace GB.Emulator
                 {
                     //ask for VBLANK INTERRUPT
                     mmu.IF |= 0x1;
-                    STAT.ScreenMode = ScreenMode.VBlank;
+                    ModeUpdate(ScreenMode.VBlank);
                 }
-
-                STAT.LY_LYC_Signal = Scanline == ScanLineC;
             }
         }
-        private void L153()
-        {
 
-        }
         private void L143()
         {
             switch (Cycle)
             {
                 case 80:
-                    STAT.ScreenMode = ScreenMode.Transferring;
+                    ModeUpdate(ScreenMode.Transferring);
                     break;
-                case var c when c == (252 + ((SCX + 3) & -4)):
-                    STAT.ScreenMode = ScreenMode.HBlank;
+                case 252:
+                    ModeUpdate(ScreenMode.HBlank);
+                    //INSERT RENDER FUNCTION HERE???
                     break;
                 case 456:
                     Cycle = 0;
                     Scanline++;
-                    STAT.LY_LYC_Signal = false;
+                    STAT.LY_Comparison_Signal = false;
 
                     if (Scanline == 144)
-                        STAT.ScreenMode = ScreenMode.VBlank;
+                        ModeUpdate(ScreenMode.VBlank);
                     else
-                        STAT.ScreenMode = ScreenMode.SearchOAMRAM;
+                        ModeUpdate(ScreenMode.SearchOAMRAM);
                     break;
-            }
-            if (Cycle == 80)
-            {
-                STAT.ScreenMode = ScreenMode.Transferring;
-            }
-            else if (Cycle == 252 + ((SCX + 3) & -4))
-            {
-                STAT.ScreenMode = ScreenMode.HBlank;
-            }
-            else if (Cycle == 456)
-            {
-                Cycle = 0;
-                Scanline++;
-                STAT.LY_LYC_Signal = false;
-
-                STAT.ScreenMode = ScreenMode.SearchOAMRAM;
-
             }
         }
         private void ModeUpdate(ScreenMode mode)
         {
             STAT.ScreenMode = mode;
             bool interrupt = false;
-            if (Scanline == ScanLineC && STAT.LYC_LY_Check_6)
+            if (Scanline == ScanLineC && STAT.LYC_Compare_Enable_6)
             {
                 interrupt = true;
             }
@@ -227,18 +218,7 @@ namespace GB.Emulator
                 mmu.IF |= 0x2;
             }
         }
-        private byte scanLine;
-        public byte Scanline
-        {
-            get
-            {
-                return LCDC.LCD_7 ? this.scanLine : 0x0; //if the lcd is off return 0x0
-            }
-            set
-            {
-                this.scanLine = value;
-            }
-        }
+
         internal void WriteByte(ushort addr, byte value)
         {
             switch (addr)
