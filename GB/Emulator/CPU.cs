@@ -56,8 +56,8 @@ namespace GB.Emulator
             var op = NextByte();
             Dispatch(op);
             Registers.PC &= 0xffff; //mask the pc.
-            clock.M++;
-            clock.T += t;
+
+            mmu.Tick();
         }
         private void InterruptRoutine()
         {

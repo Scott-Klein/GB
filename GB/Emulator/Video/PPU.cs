@@ -128,9 +128,9 @@ namespace GB.Emulator
         {
             VRAM = new byte[VRAM_SIZE];
             OAM = new byte[OAM_SIZE];
-            this.pixels = new int[GB_WIDTH * GB_HEIGHT];
             LCDC = new LCDCRegisters();
             STAT = new STATRegisters();
+            Renderer = new Render(mmu, LCDC, VRAM);
         }
 
         public void Tick()
@@ -180,6 +180,7 @@ namespace GB.Emulator
                 case 252:
                     ModeUpdate(ScreenMode.HBlank);
                     //INSERT RENDER FUNCTION HERE???
+                    Renderer.RenderLine(Scanline);
                     break;
                 case 456:
                     Cycle = 0;
@@ -193,6 +194,7 @@ namespace GB.Emulator
                     break;
             }
         }
+
         private void ModeUpdate(ScreenMode mode)
         {
             STAT.ScreenMode = mode;
@@ -236,11 +238,22 @@ namespace GB.Emulator
                     break;
                 case 0xff44:
                     break;
+                case 0xff47:
+                    BGP = value;
+                    break;
+                case 0xff42:
+                    Renderer.SCY = value;
+                    break;
+                case 0xff43:
+                    Renderer.SCX = value;
+                    break;
                 default:
                     throw new NotImplementedException("Can't right to the address yet");
                     break;
             }
         }
+        
+        private byte BGP;
 
         public byte ReadByte(ushort addr)
         {
@@ -248,14 +261,16 @@ namespace GB.Emulator
             {
                 var a when a >= VRAM_START && a <= VRAM_END => VRAM[addr & VRAM_SIZE],
                 var a when a >= OAM_START && a <= OAM_END => OAM[addr & OAM_SIZE],
-                var a when a == 0xff44 => Scanline,
-                var a when a == 0xff45 => ScanLineC,
-                var a when a == 0xff41 => stat,
-                _=> 0xff
+                0xff41 => stat,
+                0xff44 => Scanline,
+                0xff45 => ScanLineC,
+                0xff47 => BGP,
+                _ => 0xff
             };
         }
 
         private MMU mmu;
+
         internal void SetMMU(MMU mMU)
         {
             this.mmu = mMU;

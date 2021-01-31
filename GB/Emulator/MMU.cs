@@ -50,7 +50,10 @@ namespace GB.Emulator
                 bootEnable = false;
             }
         }
-
+        public void Tick()
+        {
+            ppu.Tick();
+        }
         private void InitialiseMemory()
         {
             RAM = new byte[0x2000];

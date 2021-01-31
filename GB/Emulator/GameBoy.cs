@@ -14,7 +14,7 @@ namespace Emulator
 
         public bool PowerSwitch { get; set; }
         public Cartridge Cart { get { return this.cart; }  }
-        public int[] Pixels { get { return this.ppu.Pixels;  } }
+        public int[] Pixels { get { return this.ppu.Renderer.Pixels;  } }
 
         public GameBoy(string rom)
         {
@@ -29,7 +29,7 @@ namespace Emulator
 
         public void Run()
         {
-            while (this.PowerSwitch)
+            for (int i = 0; i < 50000; i++)
             {
                 this.cpu.Tick();
             }

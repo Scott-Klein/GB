@@ -41,8 +41,6 @@ namespace GBemu
             this._graphics.PreferredBackBufferHeight = GAMEBOY_HEIGHT*6;
             this._graphics.ApplyChanges();
             GBVideo = new Texture2D(GraphicsDevice, GAMEBOY_WIDTH, GAMEBOY_HEIGHT);
-            gameBoy.Run();
-            
         }
 
         protected override void LoadContent()
@@ -63,7 +61,7 @@ namespace GBemu
                 Exit();
 
             // TODO: Add your update logic here
-
+            gameBoy.Run();
             base.Update(gameTime);
         }
 
@@ -85,7 +83,13 @@ namespace GBemu
         /// </summary>
         private void FillBufferFromEmulator()
         {
-            GBVideo.SetData(this.gameBoy.Pixels);
+            Color[] finalPixels = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
+            for (int i = 0; i < this.gameBoy.Pixels.Length; i++)
+            {
+                int n = this.gameBoy.Pixels[i] << 6;
+                finalPixels[i] = new Color(n, n, n);
+            }
+            GBVideo.SetData(finalPixels);
         }
 
 
