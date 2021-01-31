@@ -341,6 +341,13 @@ namespace GB.Emulator
                     pendingIME = 1;
                     ControlUnit.RET();
                     break;
+                //suba
+                case var o when o >= 0x90 && o <= 0x97:
+                    ControlUnit.SUBA(0x7 & o);
+                    break;
+                case var o when 0 >= 0x98 && o <= 0x9f:
+                    ControlUnit.SUBC(0x7 & o);
+                    break;
                 case var o when o >= 0x40 && o <= 0x7f:
                     var regData = Registers.GetRegById(0x7 & o);
                     Registers.SetRegById((o >> 3) & 0x7, regData);

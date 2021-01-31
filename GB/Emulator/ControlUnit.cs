@@ -32,6 +32,8 @@ namespace GB.Emulator
         byte RLCA(byte value);
         void RET();
         void CP(int value);
+        void SUBA(int RegId);
+        void SUBC(int RegId);
     }
     public class ControlUnit : IControlUnit
     {
@@ -290,6 +292,29 @@ namespace GB.Emulator
             Registers.Subtract = true;
             Registers.HalfCarry = (Registers.A & 0x0f) < (value & 0x0f);
             Registers.Carry = Registers.A < result;
+        }
+
+        public void SUBA(int RegId)
+        {
+            Registers.Subtract = true;
+            byte value = Registers.GetRegById(RegId);
+            Registers.Carry = value > Registers.A;
+            Registers.A -= value;
+            Registers.Zero = Registers.A == 0;
+            Registers.HalfCarry = (Registers.A & 0x0f) < (value & 0x0f);
+        }
+
+        public void SUBC(int RegId)
+        {
+            Registers.Subtract = true;
+            byte value = Registers.GetRegById(RegId);
+
+            bool carry = value > Registers.A;
+            Registers.A = (byte)(Registers.A - value - Convert.ToByte(Registers.Carry));
+            Registers.Zero = Registers.A == 0;
+
+            Registers.HalfCarry = ((Registers.A & 0x0f) - Convert.ToByte(Registers.Carry)) < (value & 0x0f);
+            Registers.Carry = carry;
         }
     }
 }

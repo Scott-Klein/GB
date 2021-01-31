@@ -27,11 +27,10 @@ namespace GB.Emulator
         }
         public MMU(Cartridge cartridge, PPU ppu, bool testing = false, byte testInstruction = 0x0)
         {
-            InitialiseMemory();
-            rom = cartridge;
             this.ppu = ppu;
             ppu.SetMMU(this);
-
+            InitialiseMemory();
+            rom = cartridge;
             try
             {
                 if (!testing)
@@ -77,6 +76,7 @@ namespace GB.Emulator
                 var a when a <= 0xfdff => RAM[addr & 0x1fff],
                 var a when a <= 0xfe9f => ppu.OAM[addr & 0xff],//[FE00-FE9F] Graphics: sprite information:
                 0xff00 => Joy.P1,
+                0xff42 => ppu.ReadByte(addr),
                 0xff44 => ppu.ReadByte(addr),
                 0xff50 => Convert.ToByte(bootEnable),
                 var a when a >= 0xff04 && a <= 0xff07 => timer.ReadByte(addr),

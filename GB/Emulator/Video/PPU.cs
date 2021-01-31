@@ -98,6 +98,7 @@ namespace GB.Emulator
         private const int GB_HEIGHT = 144;
         public byte[] VRAM { get; }
         public byte[] OAM { get; }
+        private bool startup = true;
         private byte lcdc;
         private byte SCX;
         private byte ScanLineC; // Causes an interrupt when ly and lyc match.
@@ -130,12 +131,12 @@ namespace GB.Emulator
             OAM = new byte[OAM_SIZE];
             LCDC = new LCDCRegisters();
             STAT = new STATRegisters();
-            Renderer = new Render(mmu, LCDC, VRAM);
+            Renderer = new Render(this, LCDC, VRAM);
         }
 
         public void Tick()
         {
-            if (!LCDC.LCD_7)
+            if (!LCDC.LCD_7 || startup)
             {
                 return;
             }
@@ -254,7 +255,10 @@ namespace GB.Emulator
         }
         
         private byte BGP;
-
+        public byte ReadByte(int addr)
+        {
+            return (byte)this.ReadByte((ushort)addr);
+        }
         public byte ReadByte(ushort addr)
         {
             return addr switch
@@ -274,6 +278,7 @@ namespace GB.Emulator
         internal void SetMMU(MMU mMU)
         {
             this.mmu = mMU;
+            this.startup = false;
         }
     }
 }

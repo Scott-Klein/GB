@@ -29,7 +29,7 @@ namespace Emulator
 
         public void Run()
         {
-            for (int i = 0; i < 50000; i++)
+            for (int i = 0; i < 10000; i++)
             {
                 this.cpu.Tick();
             }
