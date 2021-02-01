@@ -316,6 +316,9 @@ namespace GB.Emulator
                 case 0xfe:
                     ControlUnit.CP(NextByte());
                     break;
+                case var o when o >= 0xb8 && o <= 0xbf:
+                    ControlUnit.CP(Registers.GetRegById(o & 0x7));
+                    break;
                 case var o when o >= 0xa8 && o <= 0xaf:
                     ControlUnit.XOR(Registers.GetRegById(o & 0x7));
                     break;
@@ -336,10 +339,16 @@ namespace GB.Emulator
                     //Disable interrupt;
                     IME = false;
                     break;
+                case 0xf6:
+                    ControlUnit.ORA(NextByte());
+                    break;
                 case 0xd9:
                     //RETI
                     pendingIME = 1;
                     ControlUnit.RET();
+                    break;
+                case var o when o >= 0xb0 && o <= 0xb7:
+                    ControlUnit.ORA(Registers.GetRegById(o & 0x7));
                     break;
                 //suba
                 case var o when o >= 0x90 && o <= 0x97:
@@ -351,6 +360,18 @@ namespace GB.Emulator
                 case var o when o >= 0x40 && o <= 0x7f:
                     var regData = Registers.GetRegById(0x7 & o);
                     Registers.SetRegById((o >> 3) & 0x7, regData);
+                    break;
+                case var o when o >= 0x80 && o <= 0x87:
+                    ControlUnit.ADDA(Registers.GetRegById(o & 0x7));
+                    break;
+                case 0xc3:
+                    ControlUnit.JP(NextWord());
+                    break;
+                case 0xc2:
+                    ControlUnit.JPNZ(NextWord());
+                    break;
+                case 0xd2:
+                    ControlUnit.JPZ(NextWord());
                     break;
                 default:
                     throw new NotImplementedException($"The op code {op:X2} has not been implemented yet.");

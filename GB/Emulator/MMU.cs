@@ -126,7 +126,7 @@ namespace GB.Emulator
                     Joy.P1 = value;
                     break;
                 case 0xff50:
-                    bootEnable = value > 0;
+                    bootEnable = value < 0;
                     break;
                 case var a when a >= 0x8000 && a <= 0x9fff:
                     ppu.WriteByte(addr, value);

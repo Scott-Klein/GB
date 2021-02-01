@@ -34,6 +34,13 @@ namespace GB.Emulator
         void CP(int value);
         void SUBA(int RegId);
         void SUBC(int RegId);
+        void ORA(int value);
+        void ADDA(int value);
+        void ADDC(int value);
+        void AND(int value);
+        void JP(int addr);
+        void JPNZ(int addr);
+        void JPZ(int addr);
     }
     public class ControlUnit : IControlUnit
     {
@@ -315,6 +322,71 @@ namespace GB.Emulator
 
             Registers.HalfCarry = ((Registers.A & 0x0f) - Convert.ToByte(Registers.Carry)) < (value & 0x0f);
             Registers.Carry = carry;
+        }
+
+        public void ORA(int value)
+        {
+            Registers.A |= (byte)value;
+
+            Registers.Zero = Registers.A == 0;
+            Registers.Subtract = false;
+            Registers.HalfCarry = false;
+            Registers.Carry = false;
+        }
+
+        public void ADDA(int value)
+        {
+            Registers.Subtract = false;
+            byte result = (byte)(Registers.A + value);
+            Registers.Carry = result < Registers.A;
+            Registers.HalfCarry = (Registers.A & 0x0f) + (value & 0x0f) > 0x0f;
+            Registers.Zero = result == 0;
+            Registers.A = result;
+        }
+
+        public void ADDC(int value)
+        {
+            int preservedCarry = Convert.ToInt32(Registers.Carry);
+            int result = Registers.A + value + preservedCarry;
+
+            Registers.Zero = (byte)result == 0;
+            Registers.Subtract = false;
+            Registers.HalfCarry = (Registers.A & 0x0f) + (value & 0x0f) + preservedCarry > 0x0f;
+            Registers.Carry = result > 255;
+
+            Registers.A = (byte)result;
+
+        }
+
+        public void AND(int value)
+        {
+            Registers.Subtract = false;
+            Registers.HalfCarry = true;
+            Registers.Carry = false;
+
+            Registers.A &= (byte)value;
+            Registers.Zero = Registers.A == 0;
+        }
+
+        public void JP(int addr)
+        {
+            Registers.PC = (ushort)addr;
+        }
+
+        public void JPNZ(int addr)
+        {
+            if (!Registers.Zero)
+            {
+                JP(addr);
+            }
+        }
+
+        public void JPZ(int addr)
+        {
+            if (Registers.Zero)
+            {
+                JP(addr);
+            }
         }
     }
 }

@@ -74,13 +74,83 @@ namespace GB.Emulator
     }
     public class STATRegisters
     {
-        public byte Value { get; set; }
+        private byte _value;
+        public byte Value { 
+            get
+            {
+                return _value;
+            }
+            set
+            {
+                _value = value;
+            }
+        }
 
-        public bool LYC_Compare_Enable_6 { get; set; }
-        public bool Mode2OAMcheckEnable_5 { get; set; }
-        public bool Mode1VBlankcheckEnable_4 { get; set; }
-        public bool Mode0HBlankCheckEnable_3 { get; set; }
-        public bool LY_Comparison_Signal { get; set; }
+
+        public bool LYC_Compare_Enable_6 { 
+            get
+            {
+                return (_value & 0x40) > 0;
+            }
+            set
+            {
+                throw new AccessViolationException("LYC is set via bytes");
+            }
+        }
+        public bool Mode2OAMcheckEnable_5 
+        { 
+            get
+            {
+                return (_value & 0x20) > 0;
+            }
+            set
+            {
+                throw new AccessViolationException("OAM Enable is set via write bytes");
+            }
+        }
+
+        public bool Mode1VBlankcheckEnable_4 
+        { 
+            get
+            {
+                return (_value & 0x10) > 0;
+            }
+            set
+            {
+                throw new AccessViolationException("VBlank check enable is written only via bytes");
+            }
+        }
+        
+        public bool Mode0HBlankCheckEnable_3 
+        { 
+            get
+            {
+                return (_value & 0x8) > 0;
+            }
+            set
+            {
+                throw new AccessViolationException("Hblank check enable is written only via bytes");
+            }
+        }
+
+        public bool LY_Comparison_Signal 
+        { 
+            get
+            {
+                return (_value & 0x4) > 0;
+            }
+            set
+            {
+                if (value)
+                {
+                    _value |= 0x4;
+                }
+                else
+                {
+                    _value &= 0xfb;
+                }
+            }
+        }
 
         public ScreenMode ScreenMode { get; set; }
     }
@@ -241,6 +311,9 @@ namespace GB.Emulator
                     break;
                 case 0xff47:
                     BGP = value;
+                    break;
+                case 0xff41:
+                    STAT.Value = value;
                     break;
                 case 0xff42:
                     Renderer.SCY = value;
