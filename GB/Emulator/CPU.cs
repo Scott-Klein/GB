@@ -43,13 +43,10 @@ namespace GB.Emulator
         {
             Dispatch(op);
             Registers.PC &= 0xffff; //mask the pc.
-            clock.M++;
-            clock.T += t;
         }
 
         public void Tick()
         {
-            //
             InterruptRoutine();
             //fetch;
             var op = NextByte();

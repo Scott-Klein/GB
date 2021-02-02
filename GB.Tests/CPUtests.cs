@@ -46,7 +46,6 @@ namespace GB.Tests
             Assert.That(regs.BC, Is.EqualTo(testword4));
             Assert.That(regs.DE, Is.EqualTo(testword3));
             Assert.That(regs.HL, Is.EqualTo(testword2));
-            Assert.That(regs.AF, Is.EqualTo(testword1));
         }
 
 
