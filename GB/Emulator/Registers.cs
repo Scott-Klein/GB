@@ -129,7 +129,20 @@ namespace GB.Emulator
         public ushort SP { get; set; }
         public ushort PC { get; set; }
 
-        public byte F { get; set; }
+        public byte F
+        {
+            get
+            {
+                return (byte)(Convert.ToInt16(this.Zero) << 7 | Convert.ToInt16(this.Subtract) << 6 | Convert.ToInt16(this.HalfCarry) << 5 | Convert.ToInt16(this.Carry) << 4);
+            }
+            set
+            {
+                this.Zero = (value & 0x80) > 0;
+                this.Subtract = (value & 0x40) > 0;
+                this.HalfCarry = (value & 0x20) > 0;
+                this.Carry = (value & 0x10) > 0;
+            }
+        }
 
         private static ushort Combine(byte hi, byte lo)
         {

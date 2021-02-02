@@ -86,7 +86,8 @@ namespace GBemu
             Color[] finalPixels = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
             for (int i = 0; i < this.gameBoy.Pixels.Length; i++)
             {
-                int n = this.gameBoy.Pixels[i] << 6;
+                int n = this.gameBoy.Pixels[i];
+                n = 255 - (n * 85);
                 finalPixels[i] = new Color(n, n, n);
             }
             GBVideo.SetData(finalPixels);

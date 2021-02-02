@@ -79,7 +79,7 @@ namespace GB.Emulator
 
         private bool CC(byte op)
         {
-            return ((op >> 3) & 0x38) switch
+            return ((op >> 3) & 0x3) switch
             {
                 0 => !Registers.Zero,
                 1 => Registers.Zero,
@@ -177,7 +177,7 @@ namespace GB.Emulator
 
         public byte RR(byte value)
         {
-            byte preservedCarry = Convert.ToByte(Registers.Carry);
+            byte preservedCarry = Registers.Carry ? 0x80 : 0;
 
             byte result = (byte)(value >> 1 | preservedCarry);
 
@@ -196,7 +196,7 @@ namespace GB.Emulator
             byte result = (byte)(value << 1 | preservedCarry);
 
             Registers.Zero = result == 0;
-            Registers.Carry = (value & 1) == 1;
+            Registers.Carry = (value & 0x80) > 1;
             Registers.Subtract = false;
             Registers.HalfCarry = false;
 
@@ -293,7 +293,7 @@ namespace GB.Emulator
 
         public void CP(int value)
         {
-            int result = Registers.A - value;
+            byte result = (byte)(Registers.A - value);
 
             Registers.Zero = result == 0;
             Registers.Subtract = true;

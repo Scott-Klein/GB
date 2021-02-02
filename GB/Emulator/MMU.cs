@@ -14,7 +14,7 @@ namespace GB.Emulator
         Joypad Joy;
         Timer timer;
         public byte IF;
-        public byte IE;
+        public byte IE = 0xe1; //interrupt flags initial state is e1;
         private byte[] bootRom;
         private bool bootEnable;
         private byte[] RAM;

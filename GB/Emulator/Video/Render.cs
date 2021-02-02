@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace GB.Emulator.Video
 {
@@ -33,9 +34,9 @@ namespace GB.Emulator.Video
 
         private int winTileRow;
 
-        private int WX;
+        public int WX;
 
-        private int WY;
+        public int WY;
 
         public Render(PPU ppu, LCDCRegisters regs, byte[] vram)
         {
@@ -96,20 +97,16 @@ namespace GB.Emulator.Video
             for (int i = 0; i < TILE_COLUMNS; i++)
             {
                 byte[] tile = new byte[TILE_BYTE_SIZE];
-                var tileId = VRAM[(BGTileOffset - 0x9000) + index];
-                for (int j = 0; j < TILE_BYTE_SIZE; j++)
+                var tileId = VRAM[(BGTileOffset - 0x8000) + index + i];
+                if (LCDC.BGWindowTileSet_4)
                 {
-                    if (LCDC.BGWindowTileSet_4)
-                    {
-                        // Unsigned byte offset of 0x8000
-                        tile[j] = VRAM[(tileId * TILE_BYTE_SIZE) + j];
-                    }
-                    else
-                    {
-                        // Signed byte offset from 0x9000
-                        tile[j] = VRAM[0x1000 + ((sbyte)tileId * TILE_BYTE_SIZE) + j];
-                    }
+                    Array.Copy(VRAM, tileId * TILE_BYTE_SIZE, tile, 0, TILE_BYTE_SIZE);
                 }
+                else
+                {
+                    Array.Copy(VRAM, 0x1000 + ((sbyte)tileId * TILE_BYTE_SIZE), tile, 0, TILE_BYTE_SIZE);
+                }
+
                 Cache[i] = tile;
             }
             return Cache;
@@ -121,7 +118,7 @@ namespace GB.Emulator.Video
             byte lsb = tileBytes[(offsetY << 1) + 1];
 
             //Extract the high bit, low bit, bitwise or them together.
-            int bitH = ((0x80 >> offsetX) & msb) >> (8 - offsetX);
+            int bitH = ((0x80 >> offsetX) & msb) >> (6 - offsetX);
             int bitL = ((0x80 >> offsetX) & lsb) >> (7 - offsetX);
             return (bitH | bitL);
 
@@ -131,10 +128,10 @@ namespace GB.Emulator.Video
         private void RenderBackGround()
         {
             //Select correct tilemap
-            BGTileOffset = LCDC.BGTileMap_3 ? 0x9800 : 0x9c00;
+            BGTileOffset = LCDC.BGTileMap_3 ? 0x9c00 : 0x9800;
 
             //Select the correct tile map row and store it in memory
-            int absoluteY = ScanLine + SCY;
+            int absoluteY = (ScanLine + SCY) % 256;//256 is the height of the bg tilemap.
 
             if (absoluteY >> 3 != tileRow)
             {
@@ -222,7 +219,7 @@ namespace GB.Emulator.Video
                 return;
             }
 
-            BGTileOffset = LCDC.WindowTileMap_6 ? 0x9800 : 0x9c00;
+            BGTileOffset = LCDC.WindowTileMap_6 ? 0x9c00 :0x9800;
 
             int offsetY = ScanLine - WY;
             if (offsetY >> 3 != winTileRow)
@@ -244,16 +241,18 @@ namespace GB.Emulator.Video
                 rawPixels[(ScanLine * GB_SCREEN_WIDTH) + i] = BGColor(color);
             }
         }
-        private int SpriteColor(int raw, int BP0)
+        public byte BP0;
+        public byte BP1;
+        private int SpriteColor(int raw, int palleteId)
         {
             byte palette;
             if (BP0 == 0)
             {
-                palette = ppu.ReadByte(0xff48);
+                palette = BP0;
             }
             else
             {
-                palette = ppu.ReadByte(0xff49);
+                palette = BP1;
             }
 
             switch (raw)

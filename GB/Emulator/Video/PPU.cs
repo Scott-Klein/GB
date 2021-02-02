@@ -74,8 +74,8 @@ namespace GB.Emulator
     }
     public class STATRegisters
     {
-        private byte _value;
-        public byte Value { 
+        private byte _value = 0x84;
+        public byte Value {
             get
             {
                 return _value;
@@ -87,7 +87,7 @@ namespace GB.Emulator
         }
 
 
-        public bool LYC_Compare_Enable_6 { 
+        public bool LYC_Compare_Enable_6 {
             get
             {
                 return (_value & 0x40) > 0;
@@ -97,8 +97,8 @@ namespace GB.Emulator
                 throw new AccessViolationException("LYC is set via bytes");
             }
         }
-        public bool Mode2OAMcheckEnable_5 
-        { 
+        public bool Mode2OAMcheckEnable_5
+        {
             get
             {
                 return (_value & 0x20) > 0;
@@ -109,8 +109,8 @@ namespace GB.Emulator
             }
         }
 
-        public bool Mode1VBlankcheckEnable_4 
-        { 
+        public bool Mode1VBlankcheckEnable_4
+        {
             get
             {
                 return (_value & 0x10) > 0;
@@ -120,9 +120,9 @@ namespace GB.Emulator
                 throw new AccessViolationException("VBlank check enable is written only via bytes");
             }
         }
-        
-        public bool Mode0HBlankCheckEnable_3 
-        { 
+
+        public bool Mode0HBlankCheckEnable_3
+        {
             get
             {
                 return (_value & 0x8) > 0;
@@ -133,8 +133,8 @@ namespace GB.Emulator
             }
         }
 
-        public bool LY_Comparison_Signal 
-        { 
+        public bool LY_Comparison_Signal
+        {
             get
             {
                 return (_value & 0x4) > 0;
@@ -225,6 +225,7 @@ namespace GB.Emulator
             {
                 Cycle = 0;
                 ModeUpdate(ScreenMode.SearchOAMRAM);
+                Scanline = 0;
             }
 
         }
@@ -238,6 +239,11 @@ namespace GB.Emulator
                     mmu.IF |= 0x1;
                     ModeUpdate(ScreenMode.VBlank);
                 }
+            }
+            else if(Cycle == 456)
+            {
+                Scanline++;
+                Cycle = 0;
             }
         }
 
@@ -321,12 +327,24 @@ namespace GB.Emulator
                 case 0xff43:
                     Renderer.SCX = value;
                     break;
+                case 0xff4b:
+                    Renderer.WX = value;
+                    break;
+                case 0xff4a:
+                    Renderer.WY = value;
+                    break;
+                case 0xff48:
+                    Renderer.BP0 = value;
+                    break;
+                case 0xff49:
+                    Renderer.BP1 = value;
+                    break;
                 default:
                     throw new NotImplementedException("Can't right to the address yet");
                     break;
             }
         }
-        
+
         private byte BGP;
         public byte ReadByte(int addr)
         {
