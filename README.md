@@ -13,11 +13,11 @@ Newly started project, does not run any roms as of yet.
 
 ## To do
 * Memory
-   +Need more accurate timings
+   + Need more accurate timings
 * CPU
-  +Implement the last few instructions
+  + Implement the last few instructions
 * PPU
-  +Fix strange glitches 
-  +Fully implement timing
+  + Fix strange glitches 
+  + Fully implement timing
 * Display
-  +Sprite drawing
+  + Sprite drawing
