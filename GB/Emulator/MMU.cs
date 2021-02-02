@@ -103,6 +103,9 @@ namespace GB.Emulator
         {
             switch(addr)
             {
+                case <= 0x7fff:
+                    rom.WriteByte(addr, value);
+                    break;
                 case 0xff0f:
                     IF = value;
                     break;
@@ -136,6 +139,8 @@ namespace GB.Emulator
                     break;
                 case var a when a >= 0xff00 && a <= 0xff7f:
                     IOregisters[addr & 0x00ff] = value;
+                    break;
+                case var a when a >= 0xfea0 && a <= 0xfeff:
                     break;
                 default:
                     throw new NotImplementedException($"{addr:X2}  :  Address isn't able to be written to.");

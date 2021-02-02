@@ -26,10 +26,9 @@ namespace Emulator
             this.PowerSwitch = true;
         }
 
-
         public void Run()
         {
-            for (int i = 0; i < 250; i++)
+            for (int i = 0; i < 7000; i++)
             {
                 this.cpu.Tick();
             }

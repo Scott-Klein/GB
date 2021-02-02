@@ -11,7 +11,7 @@ namespace GBemu
         private const int GAMEBOY_WIDTH = 160;
         private const int GAMEBOY_HEIGHT = 144;
         Texture2D GBVideo;
-
+        Color[] finalPixels;
         GameBoy gameBoy;
 
         private GraphicsDeviceManager _graphics;
@@ -26,6 +26,8 @@ namespace GBemu
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
             Window.AllowUserResizing = true;
+            this.IsFixedTimeStep = false;
+            _graphics.SynchronizeWithVerticalRetrace = false;
         }
 
         /// <summary>
@@ -41,6 +43,7 @@ namespace GBemu
             this._graphics.PreferredBackBufferHeight = GAMEBOY_HEIGHT*6;
             this._graphics.ApplyChanges();
             GBVideo = new Texture2D(GraphicsDevice, GAMEBOY_WIDTH, GAMEBOY_HEIGHT);
+            finalPixels = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
         }
 
         protected override void LoadContent()
@@ -83,11 +86,11 @@ namespace GBemu
         /// </summary>
         private void FillBufferFromEmulator()
         {
-            Color[] finalPixels = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
+            finalPixels = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
             for (int i = 0; i < this.gameBoy.Pixels.Length; i++)
             {
                 int n = this.gameBoy.Pixels[i];
-                n = 255 - (n * 85);
+                n = 225 - (n * 85);
                 finalPixels[i] = new Color(n, n, n);
             }
             GBVideo.SetData(finalPixels);

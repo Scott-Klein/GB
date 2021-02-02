@@ -256,7 +256,6 @@ namespace GB.Emulator
                     break;
                 case 252:
                     ModeUpdate(ScreenMode.HBlank);
-                    //INSERT RENDER FUNCTION HERE???
                     Renderer.RenderLine(Scanline);
                     break;
                 case 456:

@@ -21,7 +21,9 @@ namespace GB.Emulator.Cart
 
         public void WriteByte(ushort addr, byte value)
         {
-            throw new NotImplementedException();
+            //Nothing is supposed to happen in this function, but it needs to exist.
+            //Some roms such as Tetris attempt to write to the MBC, this is theorised
+            //to be because Tetris may have been developed on an early MBC1 cartridge.
         }
     }
 }
