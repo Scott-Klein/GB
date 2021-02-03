@@ -72,7 +72,7 @@ namespace GBemu
 
             Rectangle dst = GenerateBlackBars();
 
-            this._spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Opaque);
+            this._spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Opaque, SamplerState.PointClamp);
             this._spriteBatch.Draw(GBVideo, dst, Color.White);
             this._spriteBatch.End();
             base.Draw(gameTime);
@@ -88,8 +88,21 @@ namespace GBemu
             for (int i = 0; i < this.gameBoy.Pixels.Length; i++)
             {
                 int n = this.gameBoy.Pixels[i];
-                n = 225 - (n * 85);
-                finalPixels[i] = new Color(n, n, n);
+                switch(n)
+                {
+                    case 0:
+                        finalPixels[i] = new Color(155, 188, 15);
+                        break;
+                    case 1:
+                        finalPixels[i] = new Color(139, 172, 15);
+                        break;
+                    case 2:
+                        finalPixels[i] = new Color(48, 98, 48);
+                        break;
+                    case 3:
+                        finalPixels[i] = new Color(15, 56, 15);
+                        break;
+                }
             }
             GBVideo.SetData(finalPixels);
         }
@@ -109,6 +122,7 @@ namespace GBemu
             {
                 //We need bars on the top and the bottom
                 int height = (int)((Window.ClientBounds.Width / preferredAspect) + 0.5f);
+                height = (height / GAMEBOY_HEIGHT) * GAMEBOY_HEIGHT;
                 int barHeight = (Window.ClientBounds.Height - height) / 2;
                 dst = new Rectangle(0, barHeight, Window.ClientBounds.Width, height);
             }
@@ -116,6 +130,7 @@ namespace GBemu
             {
                 //We need bars on the sides.
                 int width = (int)((Window.ClientBounds.Height * preferredAspect) + 0.5f);
+                width = (width / GAMEBOY_WIDTH) * GAMEBOY_WIDTH;
                 int barWidth = (Window.ClientBounds.Width - width) / 2;
                 dst = new Rectangle(barWidth, 0, width, Window.ClientBounds.Height);
             }

@@ -118,9 +118,9 @@ namespace GB.Emulator.Video
             byte lsb = tileBytes[(offsetY << 1) + 1];
 
             //Extract the high bit, low bit, bitwise or them together.
-            int bitH = ((0x80 >> offsetX) & msb) >> (6 - offsetX);
-            int bitL = ((0x80 >> offsetX) & lsb) >> (7 - offsetX);
-            return (bitH | bitL);
+            int bitH = ((0x80 >> offsetX) & msb);
+            int bitL = ((0x80 >> offsetX) & lsb);
+            return ((bitH > 0 ? 0x2 : 0x0) | (bitL > 0 ? 0x1 : 0x0));
 
             //convert to the current pallette
         }
