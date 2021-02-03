@@ -466,7 +466,14 @@ namespace GB.Emulator
                 case 0xd2:
                     ControlUnit.JPZ(NextWord());
                     break;
-
+                case var o when (o >= 0xa0 && o <= 0xa5) || o == 0xa7:
+                    ControlUnit.AND(Registers.GetRegById(o & 7));
+                    Cycles += OpTiming.ARITHMETIC;
+                    break;
+                case 0xa6:
+                    Cycles += OpTiming.ARITHMETIC_LOAD;
+                    ControlUnit.AND(Registers.GetRegById(op & 7));
+                    break;
                 default:
                     throw new NotImplementedException($"The op code {op:X2} has not been implemented yet.");
             }

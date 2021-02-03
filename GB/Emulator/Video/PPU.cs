@@ -382,6 +382,8 @@ namespace GB.Emulator
                 var a when a >= VRAM_START && a <= VRAM_END => VRAM[addr & VRAM_SIZE],
                 var a when a >= OAM_START && a <= OAM_END => OAM[addr & OAM_SIZE],
                 0xff41 => stat,
+                0xff42 => this.Renderer.SCY,
+                0xff43 => this.Renderer.SCX,
                 0xff44 => Scanline,
                 0xff45 => ScanLineC,
                 0xff47 => BGP,
