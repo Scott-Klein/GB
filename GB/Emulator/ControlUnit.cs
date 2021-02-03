@@ -9,6 +9,7 @@ namespace GB.Emulator
     public interface IControlUnit
     {
 
+        public int Cycles { get; set; }
         void Call(ushort addr);
         void Push(ushort value);
         ushort POP();
@@ -45,12 +46,14 @@ namespace GB.Emulator
     public class ControlUnit : IControlUnit
     {
         MMU mMU;
+        public int Cycles { get; set; }
         private readonly IRegisters Registers;
 
         public ControlUnit(MMU mMU, IRegisters reg)
         {
             this.mMU = mMU;
             this.Registers = reg;
+            Cycles = 0;
         }
         public void Add16(ushort rhs)
         {
@@ -117,9 +120,11 @@ namespace GB.Emulator
 
         public void Jr(byte op, sbyte offset)
         {
+            Cycles += OpTiming.JR_N;
             if (op == 0x18 || CC(op))
             {
                 Registers.PC += (ushort)offset;
+                Cycles += OpTiming.JR_Y;
             }
         }
 
@@ -375,17 +380,21 @@ namespace GB.Emulator
 
         public void JPNZ(int addr)
         {
+            Cycles += 12;
             if (!Registers.Zero)
             {
                 JP(addr);
+                Cycles += 4;
             }
         }
 
         public void JPZ(int addr)
         {
+            Cycles += 12;
             if (Registers.Zero)
             {
                 JP(addr);
+                Cycles += 4;
             }
         }
     }

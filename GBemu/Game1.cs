@@ -26,8 +26,6 @@ namespace GBemu
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
             Window.AllowUserResizing = true;
-            this.IsFixedTimeStep = false;
-            _graphics.SynchronizeWithVerticalRetrace = false;
         }
 
         /// <summary>

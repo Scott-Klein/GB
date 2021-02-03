@@ -11,7 +11,7 @@ namespace GB.Emulator
         {
             get
             {
-               return (Value & 0x80) > 1;
+                return (Value & 0x80) > 1;
             }
         }
 
@@ -36,7 +36,8 @@ namespace GB.Emulator
                 return (Value & 0x10) > 0;
             }
         }
-        public bool BGTileMap_3 {
+        public bool BGTileMap_3
+        {
             get
             {
                 return (Value & 0x8) > 0;
@@ -75,7 +76,8 @@ namespace GB.Emulator
     public class STATRegisters
     {
         private byte _value = 0x84;
-        public byte Value {
+        public byte Value
+        {
             get
             {
                 return _value;
@@ -87,7 +89,8 @@ namespace GB.Emulator
         }
 
 
-        public bool LYC_Compare_Enable_6 {
+        public bool LYC_Compare_Enable_6
+        {
             get
             {
                 return (_value & 0x40) > 0;
@@ -156,8 +159,18 @@ namespace GB.Emulator
     }
     public class PPU
     {
+        private bool vBlank;
+        public bool V_BLANK
+        {
+            get
+            {
+                return vBlank;
+            }
+        }
+
         private LCDCRegisters LCDC;
         private STATRegisters STAT;
+        private long totalCycles;
         private const int VRAM_START = 0x8000;
         private const int VRAM_END = 0x9fff;
         private const int VRAM_SIZE = 0x2000;
@@ -166,6 +179,8 @@ namespace GB.Emulator
         private const int OAM_SIZE = 0xa0;
         private const int GB_WIDTH = 160;
         private const int GB_HEIGHT = 144;
+        private readonly Clock clock;
+
         public byte[] VRAM { get; }
         public byte[] OAM { get; }
         private bool startup = true;
@@ -195,39 +210,46 @@ namespace GB.Emulator
         private int Cycle;
 
 
-        public PPU()
+        public PPU(Clock clock)
         {
             VRAM = new byte[VRAM_SIZE];
             OAM = new byte[OAM_SIZE];
             LCDC = new LCDCRegisters();
             STAT = new STATRegisters();
             Renderer = new Render(this, LCDC, VRAM);
+            totalCycles = 0;
+            this.clock = clock;
         }
 
         public void Tick()
         {
-            if (!LCDC.LCD_7 || startup)
+            //catch up with the cpu.
+            while (this.totalCycles < clock.Cycles)
             {
-                return;
-            }
-            Cycle += 4;
+                if (!LCDC.LCD_7 || startup)
+                {
+                    return;
+                }
+                this.totalCycles += 4;
+                Cycle += 4;
 
-            if (Scanline <= 143)
-            {
-                //handle mode
-                L143();
+                if (Scanline <= 143)
+                {
+                    //handle mode
+                    L143();
+                }
+                else if (Scanline < 153)
+                {
+                    VBlank();
+                }
+                else if (Scanline == 153)
+                {
+                    Cycle = 0;
+                    ModeUpdate(ScreenMode.SearchOAMRAM);
+                    Scanline = 0;
+                    vBlank = false;
+                }
             }
-            else if (Scanline < 153)
-            {
-                VBlank();
-            }
-            else if (Scanline == 153)
-            {
-                Cycle = 0;
-                ModeUpdate(ScreenMode.SearchOAMRAM);
-                Scanline = 0;
-            }
-
         }
         private void VBlank()
         {
@@ -235,12 +257,12 @@ namespace GB.Emulator
             {
                 if (Scanline == 144)
                 {
-                    //ask for VBLANK INTERRUPT
+                    //ModeUpdate(ScreenMode.VBlank);
                     mmu.IF |= 0x1;
-                    ModeUpdate(ScreenMode.VBlank);
+                    vBlank = true;
                 }
             }
-            else if(Cycle == 456)
+            else if (Cycle == 456)
             {
                 Scanline++;
                 Cycle = 0;
@@ -274,7 +296,11 @@ namespace GB.Emulator
         private void ModeUpdate(ScreenMode mode)
         {
             STAT.ScreenMode = mode;
+
             bool interrupt = false;
+
+            //Let the game framework know that vblank is off.
+            this.vBlank = false;
             if (Scanline == ScanLineC && STAT.LYC_Compare_Enable_6)
             {
                 interrupt = true;
@@ -287,7 +313,7 @@ namespace GB.Emulator
             {
                 interrupt = true;
             }
-            if (mode == ScreenMode.VBlank && (STAT.Mode1VBlankcheckEnable_4 || STAT.Mode2OAMcheckEnable_5))
+            if (mode == ScreenMode.VBlank && STAT.Mode1VBlankcheckEnable_4)
             {
                 interrupt = true;
             }

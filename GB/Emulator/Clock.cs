@@ -8,6 +8,28 @@ namespace GB.Emulator
 {
     public class Clock
     {
+        private long totalCycles;
+        public long Cycles
+        {
+            get
+            {
+                return totalCycles;
+            }
+        }
+        private const int TIMER_INTERRUPT_FLAG = 0x2;
+        private const int TIMA_ZERO_CYCLES = 4;
+        private int _IF;
+        public int IF 
+        { 
+            get
+            {
+                //Reset the flags when read.
+                var flags = _IF;
+                _IF = 0;
+                return flags;
+            }
+        }
+        private int requestTimaOverflow = 0;
         private ushort div;
         private int tRate;
         private bool timaEnable;
@@ -21,9 +43,31 @@ namespace GB.Emulator
             {
                 div = 0;
             }
-             }
+        }
 
-        public byte TIMA { get; set; }
+        private byte tima;
+        public byte TIMA
+        {
+            get
+            {
+                return tima;
+            }
+            set
+            {
+                //if the TIMA register overflows, it must be
+                //reloaded with the value of TMA register.
+                //Also a timer interupt is requested.
+                if (tima + value > 0xff)
+                {
+                    requestTimaOverflow = TIMA_ZERO_CYCLES;
+                    tima = 0;
+                }
+                else
+                {
+                    tima = value;
+                }
+            }
+        }
         public byte TMA { get; set; }
         private byte tac;
         public byte TAC
@@ -56,7 +100,7 @@ namespace GB.Emulator
 
         public Clock()
         {
-
+            totalCycles = 0;
         }
 
         bool andResult = false; //name given by online documentation about gameboy timers.
@@ -64,6 +108,10 @@ namespace GB.Emulator
         {
             for (int i = 0; i < cycles; i++)
             {
+                totalCycles++;
+                //div increments every T-cycle
+                div++;
+                IncrementTIMA();
                 //choose which bit to take from the div register, by inspecting the tac register.
                 int bit = 0;
                 switch (tac & 3)
@@ -93,9 +141,39 @@ namespace GB.Emulator
                 {
                     andResult = true;
                 }
+
+
+                //TIMA overflow must happen at the END only.
+                //handle TIMA overflow.
+                if (requestTimaOverflow > 0)
+                {
+                    if (TIMA != 0 && requestTimaOverflow > 1)
+                    {
+                        // The over interupt and behaviour can be cancelled.
+                        // Writing to TIMA disables.
+                        requestTimaOverflow = 0;
+                        continue;
+                    }
+                    requestTimaOverflow--;
+                    //if the 4 cycles wait has passed
+                    if (requestTimaOverflow == 0)
+                    {
+                        //let the interupt handler know
+                        _IF |= TIMER_INTERRUPT_FLAG;
+                        TIMA = TMA;
+                    }
+                }
             }
+        }
 
-
+        private void IncrementTIMA()
+        {
+            //make sure we are not the in overflow behaviour handling.
+            // If handling the overflow, it must not be touched for 4 seconds.
+            if (requestTimaOverflow == 0)
+            {
+                tima += (byte)tRate;
+            }
         }
     }
 }
