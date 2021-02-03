@@ -453,7 +453,10 @@ namespace GB.Emulator
                     ControlUnit.ADDA(Registers.GetRegById(op & 0x7));
                     Cycles += OpTiming.ARITHMETIC_LOAD;
                     break;
-
+                case 0xc6:
+                    ControlUnit.ADDA(NextByte());
+                    Cycles += OpTiming.ARITHMETIC_LOAD;
+                    break;
                 case 0xc3:
                     ControlUnit.JP(NextWord());
                     Cycles += OpTiming.JP;
@@ -474,11 +477,89 @@ namespace GB.Emulator
                     Cycles += OpTiming.ARITHMETIC_LOAD;
                     ControlUnit.AND(Registers.GetRegById(op & 7));
                     break;
-                case 0xC0:
-                    ControlUnit.RETNZ();
+                case 0x2f:
+                    ControlUnit.CPL();
                     break;
+                case 0xe6:
+                    ControlUnit.AND(NextByte());
+                    Cycles += OpTiming.ARITHMETIC_LOAD;
+                    break;
+                case 0xcf:
+                    ControlUnit.RST(0x8);
+                    break;
+                case 0xdf:
+                    ControlUnit.RST(0x18);
+                    break;
+                case 0xef:
+                    ControlUnit.RST(0x28);
+                    break;
+                case 0xff:
+                    ControlUnit.RST(0x38);
+                    break;
+                case 0xc7:
+                    ControlUnit.RST(0);
+                    break;
+                case 0xd7:
+                    ControlUnit.RST(0x10);
+                    break;
+                case 0xe7:
+                    ControlUnit.RST(0x20);
+                    break;
+                case 0xf7:
+                    ControlUnit.RST(0x30);
+                    break;
+                case 0xe9:
+                    ControlUnit.JP(Registers.HL);
+                    Cycles += OpTiming.ARITHMETIC;
+                    break;
+                case 0x37:
+                    Registers.Carry = true;
+                    Registers.Subtract = false;
+                    Registers.HalfCarry = false;
+                    Cycles += OpTiming.ARITHMETIC;
+                    break;
+                case 0x3f:
+                    Registers.Carry = !Registers.Carry;
+                    Registers.Subtract = false;
+                    Registers.HalfCarry = false;
+                    Cycles += OpTiming.ARITHMETIC;
+                    break;
+                case 0xd8:
                 case 0xc8:
-                    ControlUnit.RETZ();
+                case 0xc0:
+                case 0xd0:
+                    ControlUnit.RETC(op);
+                    break;
+                case 0xc4:
+                case 0xd4:
+                case 0xcc:
+                case 0xdc:
+                    ControlUnit.CALLCC(op, NextWord());
+                    break;
+                case 0x1f:
+                    ControlUnit.RRA();
+                    break;
+                case 0xee:
+                    ControlUnit.XOR(NextByte());
+                    Cycles += OpTiming.ARITHMETIC_LOAD;
+                    break;
+                case 0xd6:
+                    ControlUnit.SUB(NextByte());
+                    break;
+                case 0xce:
+                    ControlUnit.ADDC(NextByte());
+                    Cycles += OpTiming.ARITHMETIC_LOAD;
+                    break;
+                case 0xde:
+                    ControlUnit.SUBCv(NextByte());
+                    break;
+                case var o when (o >= 0x88 && o <= 0x8d) || o == 0x8f:
+                    ControlUnit.ADDC(Registers.GetRegById(o & 0x7));
+                    Cycles += OpTiming.ARITHMETIC;
+                    break;
+                case 0x8e:
+                    ControlUnit.ADDC(Registers.GetRegById(op & 0x7));
+                    Cycles += OpTiming.ARITHMETIC_LOAD;
                     break;
                 default:
                     throw new NotImplementedException($"The op code {op:X2} has not been implemented yet.");

@@ -35,6 +35,7 @@ namespace GB.Emulator
         void CP(int value);
         void SUBA(int RegId);
         void SUBC(int RegId);
+        void SUBCv(int value);
         void ORA(int value);
         void ADDA(int value);
         void ADDC(int value);
@@ -44,6 +45,12 @@ namespace GB.Emulator
         void JPZ(int addr);
         void RETNZ();
         void RETZ();
+        void CPL();
+        void RST(byte addr);
+        void RETC(byte op);
+        void CALLCC(byte op, ushort addr);
+        void RRA();
+        void SUB(byte value);
     }
     public class ControlUnit : IControlUnit
     {
@@ -418,6 +425,75 @@ namespace GB.Emulator
                 Cycles += OpTiming.RET_C;
                 RET();
             }
+        }
+
+        public void CPL()
+        {
+            Registers.Subtract = true;
+            Registers.HalfCarry = true;
+            Registers.A = (byte)~Registers.A;
+            Cycles += OpTiming.ARITHMETIC;
+        }
+
+        public void RST(byte addr)
+        {
+            this.Call(addr);
+            Cycles += OpTiming.RST;
+        }
+
+        public void RETC(byte op)
+        {
+            Cycles += OpTiming.ARITHMETIC_LOAD;
+            if (CC(op))
+            {
+                Cycles += OpTiming.RET_C;
+                RET();
+            }
+        }
+
+        public void CALLCC(byte op, ushort addr)
+        {
+            Cycles += OpTiming.RET_C;
+            if (CC(op))
+            {
+                Cycles += OpTiming.RET_C;
+                Call(addr);
+            }
+        }
+
+        public void RRA()
+        {
+            //preserve old carry as carry-in, and set new carry. zero everything else.
+            var preservedCarry = Registers.Carry;
+            byte value = Registers.A;
+            Registers.Carry = (value & 0x1) == 1;
+            Registers.Zero = false;
+            Registers.HalfCarry = false;
+            Registers.Subtract = false;
+            Registers.A = (byte)((value >> 1) | (preservedCarry ? 0x80 : 0));
+            Cycles += OpTiming.ARITHMETIC;
+        }
+
+        public void SUB(byte value)
+        {
+            Registers.Subtract = true;
+            Registers.Carry = value > Registers.A;
+            Registers.A -= value;
+            Registers.Zero = Registers.A == 0;
+            Registers.HalfCarry = (Registers.A & 0x0f) < (value & 0x0f);
+            Cycles += OpTiming.ARITHMETIC_LOAD;
+        }
+
+        public void SUBCv(int value)
+        {
+            Registers.Subtract = true;
+            bool carry = value > Registers.A;
+            Registers.A = (byte)(Registers.A - value - Convert.ToByte(Registers.Carry));
+            Registers.Zero = Registers.A == 0;
+
+            Registers.HalfCarry = ((Registers.A & 0x0f) - Convert.ToByte(Registers.Carry)) < (value & 0x0f);
+            Registers.Carry = carry;
+            Cycles += OpTiming.ARITHMETIC_LOAD;
         }
     }
 }

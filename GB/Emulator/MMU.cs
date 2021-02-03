@@ -81,7 +81,8 @@ namespace GB.Emulator
                 0xff44 => ppu.ReadByte(addr),
                 0xff50 => Convert.ToByte(bootEnable),
                 var a when a >= 0xff04 && a <= 0xff07 => timer.ReadByte(addr),
-                var a when a >= 0xff80 && a <= 0xfffe => HRAM[0x7f & addr]
+                var a when a >= 0xff80 && a <= 0xfffe => HRAM[0x7f & addr],
+                var a when a >= 0xfea0 && a <= 0xfeff => 0xff
             };
             throw new NotImplementedException();
         }

@@ -50,7 +50,7 @@
             {
                 var a when a <= 0x3fff && bankMode == BankingMode.ROM => ROM[a % ROM.Length],
                 var a when a <= 0x3fff => ROM[(highBank * 0x4000 + a) % ROM.Length],
-                var a when a <= 0x7fff => ROM[((highBank << 5) | lowBank) + (a & 0x3fff)],
+                var a when a <= 0x7fff => ROM[(((highBank << 5) | lowBank) + a) % ROM.Length],
                 var a when ramEnable && exRam == ExRam.k2 && a > 0xa000 && a < 0xa7ff => RAM.ReadByte(a % 0x7ff), //2k ram
                 var a when ramEnable && exRam == ExRam.k8 && a > 0xa000 && a < 0xbfff => RAM.ReadByte(a % 0xbfff), //8k, 1 bank
                 var a when ramEnable && exRam == ExRam.k32 && a > 0xa000 && a < 0xbfff => RAM.ReadByte(((a & 0x1fff)+ (0x1fff * ramBank)) % 0x8000)
