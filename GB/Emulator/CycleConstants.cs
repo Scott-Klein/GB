@@ -19,7 +19,7 @@ namespace GB.Emulator
         public const int NO_CALL = 16;
         public const int RST = 16;
         public const int RET = 16;
-        public const int RET_C = 20;
+        public const int RET_C = 12;
         public const int NO_RET = 8;
         public const int JP = 16;
         public const int NO_JP = 12;

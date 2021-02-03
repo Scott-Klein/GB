@@ -179,6 +179,7 @@ namespace GB.Emulator
         private const int OAM_SIZE = 0xa0;
         private const int GB_WIDTH = 160;
         private const int GB_HEIGHT = 144;
+        private const int DMA_CYCLES = 160;
         private readonly Clock clock;
 
         public byte[] VRAM { get; }
@@ -363,6 +364,15 @@ namespace GB.Emulator
                     break;
                 case 0xff49:
                     Renderer.BP1 = value;
+                    break;
+                    //trigger DMA Transfer
+                case 0xff46:
+                    var DMAaddr = value << 8;
+                    for (int i = 0; i < OAM.Length; i++)
+                    {
+                        OAM[i] = mmu.rb(DMAaddr + i);
+                    }
+                    
                     break;
                 default:
                     throw new NotImplementedException("Can't right to the address yet");

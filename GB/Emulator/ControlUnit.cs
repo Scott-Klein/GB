@@ -42,6 +42,8 @@ namespace GB.Emulator
         void JP(int addr);
         void JPNZ(int addr);
         void JPZ(int addr);
+        void RETNZ();
+        void RETZ();
     }
     public class ControlUnit : IControlUnit
     {
@@ -395,6 +397,26 @@ namespace GB.Emulator
             {
                 JP(addr);
                 Cycles += 4;
+            }
+        }
+
+        public void RETNZ()
+        {
+            Cycles += OpTiming.NO_RET;
+            if (!Registers.Zero)
+            {
+                Cycles += OpTiming.RET_C;
+                RET();
+            }
+        }
+
+        public void RETZ()
+        {
+            Cycles += OpTiming.NO_RET;
+            if (Registers.Zero)
+            {
+                Cycles += OpTiming.RET_C;
+                RET();
             }
         }
     }

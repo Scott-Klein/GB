@@ -28,6 +28,7 @@ namespace GB.Emulator
         public MMU(Cartridge cartridge, PPU ppu, bool testing = false, byte testInstruction = 0x0)
         {
             this.ppu = ppu;
+            Joy = new Joypad();
             ppu.SetMMU(this);
             InitialiseMemory();
             rom = cartridge;

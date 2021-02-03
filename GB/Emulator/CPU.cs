@@ -474,6 +474,12 @@ namespace GB.Emulator
                     Cycles += OpTiming.ARITHMETIC_LOAD;
                     ControlUnit.AND(Registers.GetRegById(op & 7));
                     break;
+                case 0xC0:
+                    ControlUnit.RETNZ();
+                    break;
+                case 0xc8:
+                    ControlUnit.RETZ();
+                    break;
                 default:
                     throw new NotImplementedException($"The op code {op:X2} has not been implemented yet.");
             }
