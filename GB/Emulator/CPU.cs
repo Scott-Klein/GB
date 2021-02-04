@@ -562,6 +562,16 @@ namespace GB.Emulator
                     ControlUnit.ADDC(Registers.GetRegById(op & 0x7));
                     Cycles += OpTiming.ARITHMETIC_LOAD;
                     break;
+                case 0x27:
+                    ControlUnit.DAA();
+                    break;
+                case 0xf8:
+                    ControlUnit.LDSPe8((sbyte)NextByte());
+                    break;
+                case 0xca:
+                case 0xda:
+                    ControlUnit.JPCC(op, NextWord());
+                    break;
                 default:
                     throw new NotImplementedException($"The op code {op:X2} has not been implemented yet.");
             }
@@ -642,37 +652,35 @@ namespace GB.Emulator
             if (IME && (mmu.IE & mmu.IF) != 0)
             {
                 IME = false;
-
-                ControlUnit.Push(Registers.PC);
                 switch (mmu.IF)
                 {
                     case var f when (f & mmu.IE & 0x1) == 0x1:
                         mmu.IF = (byte)(mmu.IF & 0xfe);
                         //vblank
-                        Registers.PC = 0x40;
+                        ControlUnit.Call(0x40);
                         break;
 
                     case var f when (f & mmu.IE & 0x2) == 0x2:
                         //LCD STAT
                         mmu.IF = (byte)(mmu.IF & 0xfd);
-                        Registers.PC = 0x48;
+                        ControlUnit.Call(0x48);
                         break;
 
                     case var f when (f & mmu.IE & 0x4) == 0x4:
                         mmu.IF = (byte)(mmu.IF & 0xfb);
-                        Registers.PC = 0x50;
+                        ControlUnit.Call(0x50);
                         //Timer Interrupt
                         break;
 
                     case var f when (f & mmu.IE & 0x8) == 0x8:
                         mmu.IF = (byte)(mmu.IF & 0xf7);
-                        Registers.PC = 0x58;
+                        ControlUnit.Call(0x58);
                         //serial
                         break;
 
                     case var f when (f & mmu.IE & 0x10) == 0x10:
                         mmu.IF = (byte)(mmu.IF & 0xef);
-                        Registers.PC = 0x60;
+                        ControlUnit.Call(0x60);
                         //joypad.
                         break;
                 }

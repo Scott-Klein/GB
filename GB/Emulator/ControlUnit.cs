@@ -51,6 +51,9 @@ namespace GB.Emulator
         void CALLCC(byte op, ushort addr);
         void RRA();
         void SUB(byte value);
+        void DAA();
+        void LDSPe8(sbyte value);
+        void JPCC(byte op, int addr);
     }
     public class ControlUnit : IControlUnit
     {
@@ -496,6 +499,46 @@ namespace GB.Emulator
             Registers.HalfCarry = ((Registers.A & 0x0f) - Convert.ToByte(Registers.Carry)) < (value & 0x0f);
             Registers.Carry = carry;
             Cycles += OpTiming.ARITHMETIC_LOAD;
+        }
+
+        public void DAA()
+        {
+            byte adjustmen = 0;
+            if(Registers.Carry || (Registers.A > 0x99 &&  !Registers.Subtract))
+            {
+                adjustmen = 0x60;
+                Registers.Carry = true;
+            }
+            if (Registers.HalfCarry || ((Registers.A & 0x0f) > 0x09 && !Registers.Subtract))
+            {
+                adjustmen += 0x06;
+            }
+
+            Registers.A += Registers.Subtract ? (byte)-adjustmen : adjustmen;
+            Registers.Zero = Registers.A == 0;
+            Registers.HalfCarry = false;
+            Cycles += OpTiming.ARITHMETIC;
+        }
+
+        public void LDSPe8(sbyte value)
+        {
+            var result = Registers.SP + value;
+            Registers.HL = (ushort)result;
+            Registers.Subtract = false;
+            Registers.Zero = false;
+            Registers.HalfCarry = (result & 0xf) < (Registers.SP & 0x0f);
+            Registers.Carry = (result & 0xff) < (Registers.SP & 0xff);
+            Cycles += OpTiming.LDH;
+        }
+
+        public void JPCC(byte op, int addr)
+        {
+            Cycles += OpTiming.LDH;
+            if (CC(op))
+            {
+                Cycles += OpTiming.ARITHMETIC;
+                JP(addr);
+            }
         }
     }
 }
