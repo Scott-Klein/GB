@@ -64,6 +64,7 @@ namespace GB.Emulator
             this.Registers = reg;
             Cycles = 0;
         }
+
         public void Add16(ushort rhs)
         {
             Registers.Subtract = false;
@@ -72,7 +73,7 @@ namespace GB.Emulator
             Registers.HalfCarry = (Registers.HL & 0xfff) + (rhs & 0xfff) > 0xfff;
             Registers.Carry = cachedResult > 0xffff;
 
-            Registers.HL += (ushort)cachedResult;
+            Registers.HL = (ushort)cachedResult;
         }
 
         public void Bit(int n, byte reg)
@@ -229,10 +230,11 @@ namespace GB.Emulator
             return result;
         }
 
+        //this needs to be tested thoroughly
         public byte SRA(byte value)
         {
-            byte result = (byte)(value >> 1);
-
+            byte result = (byte)(((value & 0x80) == 0x80 ? 0x80 : 0x0)|(value >> 1));
+            
             Registers.Zero = result == 0;
             Registers.Carry = (value & 0x1) == 1;
             Registers.Subtract = false;
