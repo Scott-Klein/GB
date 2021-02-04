@@ -7,6 +7,7 @@ namespace GB.Emulator
         private Clock clock;
         private IControlUnit ControlUnit;
         private bool IME;
+        private bool Halt1;
         private int Cycles;
         private MMU mmu;
         private int pendingIME;
@@ -50,15 +51,23 @@ namespace GB.Emulator
 
         public void Tick()
         {
+            byte op;
             Cycles = 0;
             InterruptRoutine();
-            //fetch;
-            var op = NextByte();
+            
+            if (!Halt1)
+            {
+                //fetch;
+                op = NextByte();
+            }
+            else
+            {
+                op = 0x76;//still in halt.
+            }
+
             Dispatch(op);
-            Registers.PC &= 0xffff; //mask the pc.
+
             HandleTiming();
-            clock.Tick(Cycles);
-            mmu.Tick();
         }
 
         public void HandleTiming()
@@ -377,7 +386,12 @@ namespace GB.Emulator
                     break;
 
                 case 0x76:
-                    throw new Exception("HALT WHO GOES THERE");
+                    Cycles += OpTiming.ARITHMETIC;
+                    Halt1 = true;
+                    if (!IME && (mmu.IE & mmu.IF) > 0)
+                    {
+                        Halt1 = false;
+                    }
                     break;
 
                 case 0xfb:
@@ -651,6 +665,7 @@ namespace GB.Emulator
             //Jump to vector
             if (IME && (mmu.IE & mmu.IF) != 0)
             {
+                Halt1 = false;
                 IME = false;
                 switch (mmu.IF)
                 {

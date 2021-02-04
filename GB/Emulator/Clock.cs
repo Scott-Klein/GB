@@ -3,11 +3,12 @@
     public class Clock
     {
         private const int TIMA_ZERO_CYCLES = 4;
-        private const int TIMER_INTERRUPT_FLAG = 0x2;
+        private const int TIMER_INTERRUPT_FLAG = 0x4;
+        public bool Overflow { get; set; }
         private int _IF;
         private bool andResult = false;
         private ushort div;
-        private int requestTimaOverflow = 0;
+        private int timaOverflow = 0;
         private byte tac;
         private byte tima;
         private bool timaEnable;
@@ -19,6 +20,32 @@
         {
             totalCycles = 0;
             tRate = 1024;
+        }
+
+        public byte TIMA 
+        { 
+            get
+            {
+                if (timaOverflow != 0)
+                {
+                    return 0;
+                }
+                return tima;
+            }
+            set
+            {
+                if (tima == 0xff & value == 0)
+                {
+                    //trigger overflow.
+                    timaOverflow = 5;
+                    tima = TMA;
+                    Overflow = true;
+                }
+                else
+                {
+                    tima = (byte)value;
+                }
+            }
         }
 
         public long Cycles
@@ -92,74 +119,61 @@
                 //div increments every T-cycle
                 div++;
 
-                //choose which bit to take from the div register, by inspecting the tac register.
-                int bit = 0;
-                switch (tac & 3)
-                {
-                    case 0:
-                        bit = 9;
-                        break;
-
-                    case 1:
-                        bit = 3;
-                        break;
-
-                    case 2:
-                        bit = 5;
-                        break;
-
-                    case 3:
-                        bit = 7;
-                        break;
-                }
-                bool d_bit = ((1 << bit) & div) > 0;
-
-                //we need to & the timer enable with the bit drawn from the div
-                if (andResult && !(d_bit && timaEnable) && div % tRate == 0)
-                {
-                    tima++;
-                    andResult = false;
-                }
-                else if (d_bit && timaEnable)
-                {
-                    andResult = true;
-                }
-
-                //TIMA overflow must happen at the END only.
-                //handle TIMA overflow.
-                if (requestTimaOverflow > 0)
-                {
-                    if (tima != 0 && requestTimaOverflow > 1)
-                    {
-                        // The over interupt and behaviour can be cancelled.
-                        // Writing to TIMA disables.
-                        requestTimaOverflow = 0;
-                        continue;
-                    }
-                    requestTimaOverflow--;
-                    //if the 4 cycles wait has passed
-                    if (requestTimaOverflow == 0)
-                    {
-                        //let the interupt handler know
-                        _IF |= TIMER_INTERRUPT_FLAG;
-                        tima = TMA;
-                    }
-                }
+                IncrementTIMA();
             }
         }
 
-        internal byte ReadByte(ushort addr)
+        bool ANDresult;
+
+        private void IncrementTIMA()
+        {
+            if (timaOverflow > 0)
+            {
+                timaOverflow--;
+                if (timaOverflow == 0)
+                {
+                    Overflow = false;
+                    this._IF |= 0x04;
+                }
+            }
+
+            int n = TACbitSelect();
+
+            bool OldResult = ANDresult;
+            var mask = (1 << n);
+            var mask_Bit = ((mask & div) > 0);
+            ANDresult = timaEnable && ((mask & div) > 0);
+
+            if(OldResult && !ANDresult)
+            {
+                TIMA++;
+            }
+
+        }
+
+        private int TACbitSelect()
+        {
+            return (tac & 3) switch
+            {
+                0 => 9,
+                1 => 3,
+                2 => 5,
+                3 => 7
+            };
+        }
+
+        public byte ReadByte(ushort addr)
         {
             return addr switch
             {
                 0xff04 => this.DIV,
-                0xff05 => this.tima,
+                0xff05 => this.TIMA,
                 0xff06 => this.TMA,
                 0xff07 => this.TAC
             };
         }
 
-        internal void WriteByte(ushort addr, byte value)
+        public void WriteByte(ushort addr, byte value)
         {
             switch (addr)
             {
@@ -168,7 +182,13 @@
                     break;
 
                 case 0xff05:
-                    this.tima = value;
+                    if (timaOverflow > 0)
+                    {
+                        //cancel interupt and the overflow handler.
+                        timaOverflow = 0; 
+                    }
+
+                    tima = value;
                     break;
 
                 case 0xff06:

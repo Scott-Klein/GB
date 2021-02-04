@@ -16,11 +16,13 @@ namespace GB.Tests.Processing
         {
             
             cart = new Cartridge(TestCartsPaths.tetris);
-            ppu = new PPU();
-            mmu = new MMU(cart, ppu);
+            clock = new Clock();
+            ppu = new PPU(clock);
+            mmu = new MMU(cart, ppu, clock);
             reg = new Registers(mmu);
             cpu = new CPU(mmu, reg);
         }
+        Clock clock;
         Cartridge cart;
         PPU ppu;
         CPU cpu;
