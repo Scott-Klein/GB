@@ -50,6 +50,10 @@ namespace GB.Emulator
 
         public void Tick()
         {
+            if (Registers.PC == 0xc067)
+            {
+                Registers.A = Registers.A;
+            }
             Cycles = 0;
             InterruptRoutine();
             //fetch;
@@ -371,8 +375,9 @@ namespace GB.Emulator
                     break;
 
                 case 0xfa:
-                    Registers.A = NextByte();
+                    Registers.A = mmu.rb(NextWord());
                     Cycles += OpTiming.LDH;
+                    Cycles += OpTiming.ARITHMETIC;
                     break;
 
                 case 0x76:

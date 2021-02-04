@@ -156,7 +156,7 @@ namespace GB.Emulator
         {
             Registers.A ^= value;
 
-            Registers.Zero = true;
+            Registers.Zero = Registers.A == 0;
             Registers.Subtract = false;
             Registers.HalfCarry = false;
             Registers.Carry = false;
