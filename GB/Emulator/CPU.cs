@@ -586,6 +586,10 @@ namespace GB.Emulator
                 case 0xda:
                     ControlUnit.JPCC(op, NextWord());
                     break;
+                case 0xf9:
+                    Registers.SP = Registers.HL;
+                    Cycles = OpTiming.ARITHMETIC_LOAD;
+                    break;
                 default:
                     throw new NotImplementedException($"The op code {op:X2} has not been implemented yet.");
             }
