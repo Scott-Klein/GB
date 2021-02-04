@@ -84,7 +84,7 @@ namespace GB.Emulator
             }
             return addr switch
             {
-                0xff0f => (byte)(0xe0 | IF),
+                0xff0f => IF,
                 0xffff => IE,
                 var a when a <= 0x7fff => rom.ReadByte(addr),
                 var a when a <= 0x9fff => ppu.VRAM[(addr & 0x1fff) % ppu.VRAM.Length],

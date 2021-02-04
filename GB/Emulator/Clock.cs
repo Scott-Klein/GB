@@ -1,14 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace GB.Emulator
+﻿namespace GB.Emulator
 {
     public class Clock
     {
+        private const int TIMA_ZERO_CYCLES = 4;
+        private const int TIMER_INTERRUPT_FLAG = 0x2;
+        private int _IF;
+        private bool andResult = false;
+        private ushort div;
+        private int requestTimaOverflow = 0;
+        private byte tac;
+        private byte tima;
+        private bool timaEnable;
         private long totalCycles;
+
+        private int tRate;
+
+        public Clock()
+        {
+            totalCycles = 0;
+            tRate = 1024;
+        }
+
         public long Cycles
         {
             get
@@ -16,23 +28,6 @@ namespace GB.Emulator
                 return totalCycles;
             }
         }
-        private const int TIMER_INTERRUPT_FLAG = 0x2;
-        private const int TIMA_ZERO_CYCLES = 4;
-        private int _IF;
-        public int IF 
-        { 
-            get
-            {
-                //Reset the flags when read.
-                var flags = _IF;
-                _IF = 0;
-                return flags;
-            }
-        }
-        private int requestTimaOverflow = 0;
-        private ushort div;
-        private int tRate;
-        private bool timaEnable;
         public byte DIV
         {
             get
@@ -45,31 +40,16 @@ namespace GB.Emulator
             }
         }
 
-        private byte tima;
-        public byte TIMA
+        public int IF
         {
             get
             {
-                return tima;
-            }
-            set
-            {
-                //if the TIMA register overflows, it must be
-                //reloaded with the value of TMA register.
-                //Also a timer interupt is requested.
-                if (tima + value > 0xff)
-                {
-                    requestTimaOverflow = TIMA_ZERO_CYCLES;
-                    tima = 0;
-                }
-                else
-                {
-                    tima = value;
-                }
+                //Reset the flags when read.
+                var flags = _IF;
+                _IF = 0;
+                return flags;
             }
         }
-        public byte TMA { get; set; }
-        private byte tac;
         public byte TAC
         {
             get
@@ -84,12 +64,15 @@ namespace GB.Emulator
                     case 0:
                         tRate = 1024;
                         break;
+
                     case 1:
                         tRate = 16;
                         break;
+
                     case 2:
                         tRate = 64;
                         break;
+
                     case 3:
                         tRate = 256;
                         break;
@@ -98,12 +81,8 @@ namespace GB.Emulator
             }
         }
 
-        public Clock()
-        {
-            totalCycles = 0;
-        }
-
-        bool andResult = false; //name given by online documentation about gameboy timers.
+        public byte TMA { get; set; }
+        //name given by online documentation about gameboy timers.
 
         public void Tick(int cycles = 1)
         {
@@ -112,7 +91,7 @@ namespace GB.Emulator
                 totalCycles++;
                 //div increments every T-cycle
                 div++;
-                IncrementTIMA();
+
                 //choose which bit to take from the div register, by inspecting the tac register.
                 int bit = 0;
                 switch (tac & 3)
@@ -120,12 +99,15 @@ namespace GB.Emulator
                     case 0:
                         bit = 9;
                         break;
+
                     case 1:
                         bit = 3;
                         break;
+
                     case 2:
                         bit = 5;
                         break;
+
                     case 3:
                         bit = 7;
                         break;
@@ -133,9 +115,9 @@ namespace GB.Emulator
                 bool d_bit = ((1 << bit) & div) > 0;
 
                 //we need to & the timer enable with the bit drawn from the div
-                if (andResult && !(d_bit && timaEnable))
+                if (andResult && !(d_bit && timaEnable) && div % tRate == 0)
                 {
-                    TIMA++;
+                    tima++;
                     andResult = false;
                 }
                 else if (d_bit && timaEnable)
@@ -143,12 +125,11 @@ namespace GB.Emulator
                     andResult = true;
                 }
 
-
                 //TIMA overflow must happen at the END only.
                 //handle TIMA overflow.
                 if (requestTimaOverflow > 0)
                 {
-                    if (TIMA != 0 && requestTimaOverflow > 1)
+                    if (tima != 0 && requestTimaOverflow > 1)
                     {
                         // The over interupt and behaviour can be cancelled.
                         // Writing to TIMA disables.
@@ -161,7 +142,7 @@ namespace GB.Emulator
                     {
                         //let the interupt handler know
                         _IF |= TIMER_INTERRUPT_FLAG;
-                        TIMA = TMA;
+                        tima = TMA;
                     }
                 }
             }
@@ -172,7 +153,7 @@ namespace GB.Emulator
             return addr switch
             {
                 0xff04 => this.DIV,
-                0xff05 => this.TIMA,
+                0xff05 => this.tima,
                 0xff06 => this.TMA,
                 0xff07 => this.TAC
             };
@@ -185,25 +166,18 @@ namespace GB.Emulator
                 case 0xff04:
                     this.DIV = value;
                     break;
+
                 case 0xff05:
-                    this.TIMA = value;
+                    this.tima = value;
                     break;
+
                 case 0xff06:
                     this.TMA = value;
                     break;
+
                 case 0xff07:
                     this.TAC = value;
                     break;
-            }
-        }
-
-        private void IncrementTIMA()
-        {
-            //make sure we are not the in overflow behaviour handling.
-            // If handling the overflow, it must not be touched for 4 seconds.
-            if (requestTimaOverflow == 0)
-            {
-                tima += (byte)tRate;
             }
         }
     }
