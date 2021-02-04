@@ -13,8 +13,22 @@ namespace GB.Emulator
         PPU ppu;
         private readonly Clock clock;
         Joypad Joy;
-        public byte IF;
+        private byte _IF;
         public byte IE = 0xe1; //interrupt flags initial state is e1;
+        
+        public byte IF { 
+            get
+            {
+                return (byte)(0xe0 | _IF);
+            }
+            set
+            {
+                _IF = value;
+            }
+        }
+        
+
+        
         private byte[] bootRom;
         private bool bootEnable;
         private byte[] RAM;

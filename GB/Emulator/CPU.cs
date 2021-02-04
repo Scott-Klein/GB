@@ -382,7 +382,7 @@ namespace GB.Emulator
 
                 case 0xfb:
                     //Set Interrupt master enable.
-                    pendingIME = 1;
+                    pendingIME = 2;
                     Cycles += OpTiming.EI;
                     break;
 
