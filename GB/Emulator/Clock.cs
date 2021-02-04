@@ -104,6 +104,7 @@ namespace GB.Emulator
         }
 
         bool andResult = false; //name given by online documentation about gameboy timers.
+
         public void Tick(int cycles = 1)
         {
             for (int i = 0; i < cycles; i++)
@@ -163,6 +164,36 @@ namespace GB.Emulator
                         TIMA = TMA;
                     }
                 }
+            }
+        }
+
+        internal byte ReadByte(ushort addr)
+        {
+            return addr switch
+            {
+                0xff04 => this.DIV,
+                0xff05 => this.TIMA,
+                0xff06 => this.TMA,
+                0xff07 => this.TAC
+            };
+        }
+
+        internal void WriteByte(ushort addr, byte value)
+        {
+            switch (addr)
+            {
+                case 0xff04:
+                    this.DIV = value;
+                    break;
+                case 0xff05:
+                    this.TIMA = value;
+                    break;
+                case 0xff06:
+                    this.TMA = value;
+                    break;
+                case 0xff07:
+                    this.TAC = value;
+                    break;
             }
         }
 

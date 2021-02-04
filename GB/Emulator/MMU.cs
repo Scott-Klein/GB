@@ -11,8 +11,8 @@ namespace GB.Emulator
     {
         Cartridge rom;
         PPU ppu;
+        private readonly Clock clock;
         Joypad Joy;
-        Timer timer;
         public byte IF;
         public byte IE = 0xe1; //interrupt flags initial state is e1;
         private byte[] bootRom;
@@ -25,9 +25,10 @@ namespace GB.Emulator
         {
             InitialiseMemory();
         }
-        public MMU(Cartridge cartridge, PPU ppu, bool testing = false, byte testInstruction = 0x0)
+        public MMU(Cartridge cartridge, PPU ppu, Clock clock, bool testing = false, byte testInstruction = 0x0)
         {
             this.ppu = ppu;
+            this.clock = clock;
             Joy = new Joypad();
             ppu.SetMMU(this);
             InitialiseMemory();
@@ -76,12 +77,11 @@ namespace GB.Emulator
                 var a when a <= 0xbfff => rom.ReadByte(addr),
                 var a when a <= 0xfdff => RAM[addr & 0x1fff],
                 var a when a <= 0xfe9f => ppu.OAM[addr & 0xff],//[FE00-FE9F] Graphics: sprite information:
-                0xff00 => Joy.P1,
-                0xff42 => ppu.ReadByte(addr),
-                0xff44 => ppu.ReadByte(addr),
                 0xff50 => Convert.ToByte(bootEnable),
-                var a when a >= 0xff04 && a <= 0xff07 => timer.ReadByte(addr),
+                var a when a >= 0xff40 && a <= 0xff4b => ppu.ReadByte(addr),
+                var a when a >= 0xff04 && a <= 0xff07 => clock.ReadByte(addr),
                 var a when a >= 0xff80 && a <= 0xfffe => HRAM[0x7f & addr],
+                var a when a >= 0xff00 && a <= 0xff7f => this.IOregisters[0xff & a],
                 var a when a >= 0xfea0 && a <= 0xfeff => 0xff
             };
             throw new NotImplementedException();
@@ -127,9 +127,6 @@ namespace GB.Emulator
                 case var a when a >= 0xff40 && a <= 0xff4b:
                     ppu.WriteByte(addr, value);
                     break;
-                case 0xff00:
-                    Joy.P1 = value;
-                    break;
                 case 0xff50:
                     bootEnable = value < 0;
                     break;
@@ -138,6 +135,9 @@ namespace GB.Emulator
                     break;
                 case var a when a >= 0xff80 && a <= 0xfffe:
                     HRAM[0x7f & addr] = value;
+                    break;
+                case var a when a >= 0xff04 && a <= 0xff07:
+                    clock.WriteByte(a, value);
                     break;
                 case var a when a >= 0xff00 && a <= 0xff7f:
                     IOregisters[addr & 0x00ff] = value;

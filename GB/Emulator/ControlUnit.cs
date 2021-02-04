@@ -312,7 +312,7 @@ namespace GB.Emulator
             Registers.Zero = result == 0;
             Registers.Subtract = true;
             Registers.HalfCarry = (Registers.A & 0x0f) < (value & 0x0f);
-            Registers.Carry = Registers.A < result;
+            Registers.Carry = Registers.A < value;
         }
 
         public void SUBA(int RegId)
@@ -352,7 +352,7 @@ namespace GB.Emulator
         {
             Registers.Subtract = false;
             byte result = (byte)(Registers.A + value);
-            Registers.Carry = result < Registers.A;
+            Registers.Carry = value + Registers.A > 255;
             Registers.HalfCarry = (Registers.A & 0x0f) + (value & 0x0f) > 0x0f;
             Registers.Zero = result == 0;
             Registers.A = result;

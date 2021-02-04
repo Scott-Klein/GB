@@ -50,10 +50,6 @@ namespace GB.Emulator
 
         public void Tick()
         {
-            if (Registers.PC == 0xc067)
-            {
-                Registers.A = Registers.A;
-            }
             Cycles = 0;
             InterruptRoutine();
             //fetch;

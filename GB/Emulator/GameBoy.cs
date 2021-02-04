@@ -23,7 +23,7 @@ namespace Emulator
 
             this.clock = new Clock();
             this.ppu = new PPU(clock);
-            this.memory = new MMU(this.cart, this.ppu);
+            this.memory = new MMU(this.cart, this.ppu, this.clock);
             this.cpu = new CPU(this.memory, clock);
             this.PowerSwitch = true;
         }
