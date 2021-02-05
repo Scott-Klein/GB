@@ -71,7 +71,7 @@ namespace GB.Emulator
 
         public void Add16(ushort rhs)
         {
-            Registers.Subtract = false;
+            Registers.Negative = false;
 
             var cachedResult = (Registers.HL & 0xffff) + (rhs & 0xffff);
             Registers.HalfCarry = (Registers.HL & 0xfff) + (rhs & 0xfff) > 0xfff;
@@ -84,7 +84,7 @@ namespace GB.Emulator
         {
             var mask = 1 << n;
             Registers.Zero = (mask & reg) == 0;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.HalfCarry = true;
         }
 
@@ -113,7 +113,7 @@ namespace GB.Emulator
 
             // Z 0 H -
             Registers.Zero = result == 0;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.HalfCarry = (result & 0xf) == 0;
 
             Registers.SetRegById(regId, result);
@@ -126,7 +126,7 @@ namespace GB.Emulator
 
             // Z 1 H -
             Registers.Zero = result == 0;
-            Registers.Subtract = true;
+            Registers.Negative = true;
             Registers.HalfCarry = (result & 0xf) == 0xf;
 
             Registers.SetRegById(regId, result);
@@ -162,7 +162,7 @@ namespace GB.Emulator
             Registers.A ^= value;
 
             Registers.Zero = Registers.A == 0;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.HalfCarry = false;
             Registers.Carry = false;
         }
@@ -179,7 +179,7 @@ namespace GB.Emulator
             byte result = (byte)(value << 1 | value >> 7);
             Registers.Zero = result == 0;
             Registers.Carry = (value & 0x80) == 0x80;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.HalfCarry = false;
             return result;
         }
@@ -189,7 +189,7 @@ namespace GB.Emulator
             byte result = (byte)(value >> 1 | value << 7);
             Registers.Zero = result == 0;
             Registers.Carry = (value & 1) == 1;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.HalfCarry = false;
             return result;
         }
@@ -202,7 +202,7 @@ namespace GB.Emulator
 
             Registers.Zero = result == 0;
             Registers.Carry = (value & 1) == 1;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.HalfCarry = false;
 
             return result;
@@ -216,7 +216,7 @@ namespace GB.Emulator
 
             Registers.Zero = result == 0;
             Registers.Carry = (value & 0x80) > 1;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.HalfCarry = false;
 
             return result;
@@ -228,7 +228,7 @@ namespace GB.Emulator
 
             Registers.Zero = result == 0;
             Registers.Carry = (value & 0x80) == 0x80;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.HalfCarry = false;
 
             return result;
@@ -241,7 +241,7 @@ namespace GB.Emulator
             
             Registers.Zero = result == 0;
             Registers.Carry = (value & 0x1) == 1;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.HalfCarry = false;
 
             return result;
@@ -250,7 +250,7 @@ namespace GB.Emulator
         public byte SWAP(byte value)
         {
             Registers.Zero = value == 0;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.Carry = false;
             Registers.HalfCarry = false;
 
@@ -264,7 +264,7 @@ namespace GB.Emulator
             Registers.Carry = (value & 1) == 1;
             Registers.Zero = result == 0;
 
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.HalfCarry = false;
 
             return result;
@@ -292,7 +292,7 @@ namespace GB.Emulator
             Registers.Carry = (value & 0x80) == 0x80;
             Registers.Zero = false;
             Registers.HalfCarry = false;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             return (byte)((value << 1) | preservedCarry);
         }
 
@@ -300,7 +300,7 @@ namespace GB.Emulator
         {
             Registers.Zero = false;
             Registers.HalfCarry = false;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.Carry = (value & 0x80) == 0x80;
 
             return (byte)((value << 1) | Convert.ToByte(Registers.Carry));
@@ -316,31 +316,31 @@ namespace GB.Emulator
             byte result = (byte)(Registers.A - value);
 
             Registers.Zero = result == 0;
-            Registers.Subtract = true;
+            Registers.Negative = true;
             Registers.HalfCarry = (Registers.A & 0x0f) < (value & 0x0f);
             Registers.Carry = Registers.A < value;
         }
 
         public void SUBA(int RegId)
         {
-            Registers.Subtract = true;
+            Registers.Negative = true;
             byte value = Registers.GetRegById(RegId);
             Registers.Carry = value > Registers.A;
+            Registers.HalfCarry = (Registers.A & 0x0f) < (value & 0x0f);
             Registers.A -= value;
             Registers.Zero = Registers.A == 0;
-            Registers.HalfCarry = (Registers.A & 0x0f) < (value & 0x0f);
+            
         }
 
         public void SUBC(int RegId)
         {
-            Registers.Subtract = true;
+            Registers.Negative = true;
             byte value = Registers.GetRegById(RegId);
-
-            bool carry = value > Registers.A;
+            byte oldCarry = Convert.ToByte(Registers.Carry);
+            bool carry = value + oldCarry > Registers.A;
+            Registers.HalfCarry = (Registers.A & 0x0f) < ((value + oldCarry) & 0x0f);
             Registers.A = (byte)(Registers.A - value - Convert.ToByte(Registers.Carry));
             Registers.Zero = Registers.A == 0;
-
-            Registers.HalfCarry = ((Registers.A & 0x0f) - Convert.ToByte(Registers.Carry)) < (value & 0x0f);
             Registers.Carry = carry;
         }
 
@@ -349,14 +349,14 @@ namespace GB.Emulator
             Registers.A |= (byte)value;
 
             Registers.Zero = Registers.A == 0;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.HalfCarry = false;
             Registers.Carry = false;
         }
 
         public void ADDA(int value)
         {
-            Registers.Subtract = false;
+            Registers.Negative = false;
             byte result = (byte)(Registers.A + value);
             Registers.Carry = value + Registers.A > 255;
             Registers.HalfCarry = (Registers.A & 0x0f) + (value & 0x0f) > 0x0f;
@@ -370,7 +370,7 @@ namespace GB.Emulator
             int result = Registers.A + value + preservedCarry;
 
             Registers.Zero = (byte)result == 0;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.HalfCarry = (Registers.A & 0x0f) + (value & 0x0f) + preservedCarry > 0x0f;
             Registers.Carry = result > 255;
 
@@ -380,7 +380,7 @@ namespace GB.Emulator
 
         public void AND(int value)
         {
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.HalfCarry = true;
             Registers.Carry = false;
 
@@ -435,7 +435,7 @@ namespace GB.Emulator
 
         public void CPL()
         {
-            Registers.Subtract = true;
+            Registers.Negative = true;
             Registers.HalfCarry = true;
             Registers.A = (byte)~Registers.A;
             Cycles += OpTiming.ARITHMETIC;
@@ -475,47 +475,51 @@ namespace GB.Emulator
             Registers.Carry = (value & 0x1) == 1;
             Registers.Zero = false;
             Registers.HalfCarry = false;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.A = (byte)((value >> 1) | (preservedCarry ? 0x80 : 0));
             Cycles += OpTiming.ARITHMETIC;
         }
 
         public void SUB(byte value)
         {
-            Registers.Subtract = true;
+            Registers.Negative = true;
             Registers.Carry = value > Registers.A;
+            Registers.HalfCarry = (Registers.A & 0x0f) < (value & 0x0f);
             Registers.A -= value;
             Registers.Zero = Registers.A == 0;
-            Registers.HalfCarry = (Registers.A & 0x0f) < (value & 0x0f);
+            
             Cycles += OpTiming.ARITHMETIC_LOAD;
         }
 
         public void SUBCv(int value)
         {
-            Registers.Subtract = true;
-            bool carry = value > Registers.A;
-            Registers.A = (byte)(Registers.A - value - Convert.ToByte(Registers.Carry));
-            Registers.Zero = Registers.A == 0;
+            int cc = Convert.ToInt32(Registers.Carry);
 
-            Registers.HalfCarry = ((Registers.A & 0x0f) - Convert.ToByte(Registers.Carry)) < (value & 0x0f);
-            Registers.Carry = carry;
+            int result = (Registers.A - value - cc);
+
+            Registers.Zero = (byte)result == 0;
+            Registers.Negative = true;
+            Registers.HalfCarry = ((Registers.A & 0x0f) - cc) < (value & 0x0f);
+            Registers.Carry = result < 0;
+
+            Registers.A = (byte)result;
             Cycles += OpTiming.ARITHMETIC_LOAD;
         }
 
         public void DAA()
         {
             byte adjustmen = 0;
-            if(Registers.Carry || (Registers.A > 0x99 &&  !Registers.Subtract))
+            if(Registers.Carry || (Registers.A > 0x99 &&  !Registers.Negative))
             {
                 adjustmen = 0x60;
                 Registers.Carry = true;
             }
-            if (Registers.HalfCarry || ((Registers.A & 0x0f) > 0x09 && !Registers.Subtract))
+            if (Registers.HalfCarry || ((Registers.A & 0x0f) > 0x09 && !Registers.Negative))
             {
                 adjustmen += 0x06;
             }
 
-            Registers.A += Registers.Subtract ? (byte)-adjustmen : adjustmen;
+            Registers.A += Registers.Negative ? (byte)-adjustmen : adjustmen;
             Registers.Zero = Registers.A == 0;
             Registers.HalfCarry = false;
             Cycles += OpTiming.ARITHMETIC;
@@ -525,7 +529,7 @@ namespace GB.Emulator
         {
             var result = Registers.SP + value;
             Registers.HL = (ushort)result;
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.Zero = false;
             Registers.HalfCarry = (result & 0xf) < (Registers.SP & 0x0f);
             Registers.Carry = (result & 0xff) < (Registers.SP & 0xff);
@@ -547,7 +551,7 @@ namespace GB.Emulator
             Cycles += OpTiming.ADD_SP;
             var result = Registers.SP + value;
             
-            Registers.Subtract = false;
+            Registers.Negative = false;
             Registers.Zero = false;
             Registers.HalfCarry = (result & 0xf) < (Registers.SP & 0x0f);
             Registers.Carry = (result & 0xff) < (Registers.SP & 0xff);

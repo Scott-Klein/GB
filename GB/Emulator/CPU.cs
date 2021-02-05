@@ -54,7 +54,7 @@ namespace GB.Emulator
             byte op;
             Cycles = 0;
             InterruptRoutine();
-            
+
             if (!Halt1)
             {
                 //fetch;
@@ -438,7 +438,7 @@ namespace GB.Emulator
                     Cycles += OpTiming.ARITHMETIC_LOAD;
                     break;
 
-                case var o when 0 >= 0x98 && o <= 0x9f && o != 0x9e:
+                case var o when o >= 0x98 && o <= 0x9f && o != 0x9e:
                     ControlUnit.SUBC(0x7 & o);
                     Cycles += OpTiming.ARITHMETIC;
                     break;
@@ -477,7 +477,7 @@ namespace GB.Emulator
                     Cycles += OpTiming.JP;
                     break;
 
-                
+
 
                 case var o when (o >= 0xa0 && o <= 0xa5) || o == 0xa7:
                     ControlUnit.AND(Registers.GetRegById(o & 7));
@@ -524,13 +524,13 @@ namespace GB.Emulator
                     break;
                 case 0x37:
                     Registers.Carry = true;
-                    Registers.Subtract = false;
+                    Registers.Negative = false;
                     Registers.HalfCarry = false;
                     Cycles += OpTiming.ARITHMETIC;
                     break;
                 case 0x3f:
                     Registers.Carry = !Registers.Carry;
-                    Registers.Subtract = false;
+                    Registers.Negative = false;
                     Registers.HalfCarry = false;
                     Cycles += OpTiming.ARITHMETIC;
                     break;

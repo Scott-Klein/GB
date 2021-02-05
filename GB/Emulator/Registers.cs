@@ -15,7 +15,7 @@ namespace GB.Emulator
         ushort HL { get; set; }
         bool Zero { get; set; }
         bool Carry { get; set; }
-        bool Subtract { get; set; }
+        bool Negative { get; set; }
         bool HalfCarry { get; set; }
 
         byte A { get; set; }
@@ -115,7 +115,7 @@ namespace GB.Emulator
 
         public bool Zero { get; set; }
         public bool Carry { get; set; }
-        public bool Subtract { get; set; }
+        public bool Negative { get; set; }
         public bool HalfCarry { get; set; }
 
         public byte A { get; set; }
@@ -133,12 +133,12 @@ namespace GB.Emulator
         {
             get
             {
-                return (byte)(Convert.ToInt16(this.Zero) << 7 | Convert.ToInt16(this.Subtract) << 6 | Convert.ToInt16(this.HalfCarry) << 5 | Convert.ToInt16(this.Carry) << 4);
+                return (byte)(Convert.ToInt16(this.Zero) << 7 | Convert.ToInt16(this.Negative) << 6 | Convert.ToInt16(this.HalfCarry) << 5 | Convert.ToInt16(this.Carry) << 4);
             }
             set
             {
                 this.Zero = (value & 0x80) > 0;
-                this.Subtract = (value & 0x40) > 0;
+                this.Negative = (value & 0x40) > 0;
                 this.HalfCarry = (value & 0x20) > 0;
                 this.Carry = (value & 0x10) > 0;
             }
