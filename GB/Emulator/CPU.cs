@@ -477,13 +477,8 @@ namespace GB.Emulator
                     Cycles += OpTiming.JP;
                     break;
 
-                case 0xc2:
-                    ControlUnit.JPNZ(NextWord());
-                    break;
+                
 
-                case 0xd2:
-                    ControlUnit.JPZ(NextWord());
-                    break;
                 case var o when (o >= 0xa0 && o <= 0xa5) || o == 0xa7:
                     ControlUnit.AND(Registers.GetRegById(o & 7));
                     Cycles += OpTiming.ARITHMETIC;
@@ -584,6 +579,8 @@ namespace GB.Emulator
                     break;
                 case 0xca:
                 case 0xda:
+                case 0xd2:
+                case 0xc2:
                     ControlUnit.JPCC(op, NextWord());
                     break;
                 case 0xf9:
