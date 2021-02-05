@@ -27,5 +27,6 @@ namespace GB.Emulator
         public const int LD_WORD = 12;
         public const int STORE_BYTE = 8;
         public const int INC_WORD_REG = 8;
+        public const int ADD_SP = 16;
     }
 }

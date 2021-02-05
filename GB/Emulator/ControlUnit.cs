@@ -54,6 +54,7 @@ namespace GB.Emulator
         void DAA();
         void LDSPe8(sbyte value);
         void JPCC(byte op, int addr);
+        void ADDSP(sbyte regId);
     }
     public class ControlUnit : IControlUnit
     {
@@ -539,6 +540,19 @@ namespace GB.Emulator
                 Cycles += OpTiming.ARITHMETIC;
                 JP(addr);
             }
+        }
+
+        public void ADDSP(sbyte value)
+        {
+            Cycles += OpTiming.ADD_SP;
+            var result = Registers.SP + value;
+            
+            Registers.Subtract = false;
+            Registers.Zero = false;
+            Registers.HalfCarry = (result & 0xf) < (Registers.SP & 0x0f);
+            Registers.Carry = (result & 0xff) < (Registers.SP & 0xff);
+
+            Registers.SP = (ushort)result;
         }
     }
 }

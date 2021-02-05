@@ -590,6 +590,9 @@ namespace GB.Emulator
                     Registers.SP = Registers.HL;
                     Cycles = OpTiming.ARITHMETIC_LOAD;
                     break;
+                case 0xe8:
+                    ControlUnit.ADDSP((sbyte)NextByte());
+                    break;
                 default:
                     throw new NotImplementedException($"The op code {op:X2} has not been implemented yet.");
             }
