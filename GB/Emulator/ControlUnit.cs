@@ -191,6 +191,7 @@ namespace GB.Emulator
             Registers.Carry = (value & 1) == 1;
             Registers.Negative = false;
             Registers.HalfCarry = false;
+
             return result;
         }
 
@@ -334,14 +335,7 @@ namespace GB.Emulator
 
         public void SUBC(int RegId)
         {
-            Registers.Negative = true;
-            byte value = Registers.GetRegById(RegId);
-            byte oldCarry = Convert.ToByte(Registers.Carry);
-            bool carry = value + oldCarry > Registers.A;
-            Registers.HalfCarry = (Registers.A & 0x0f) < ((value + oldCarry) & 0x0f);
-            Registers.A = (byte)(Registers.A - value - Convert.ToByte(Registers.Carry));
-            Registers.Zero = Registers.A == 0;
-            Registers.Carry = carry;
+            this.SUBCv(Registers.GetRegById(RegId));
         }
 
         public void ORA(int value)

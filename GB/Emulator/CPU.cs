@@ -97,7 +97,7 @@ namespace GB.Emulator
 
                 //RLCA
                 case 0x07:
-                    Registers.A = ControlUnit.RLA(Registers.A);
+                    Registers.A = ControlUnit.RLCA(Registers.A);
                     Cycles += OpTiming.SHIFT;
                     break;
 
@@ -589,6 +589,11 @@ namespace GB.Emulator
                     break;
                 case 0xe8:
                     ControlUnit.ADDSP((sbyte)NextByte());
+                    break;
+                case 0x0f:
+                    Registers.A =  ControlUnit.RRC(Registers.A);
+                    Registers.Zero = false;
+                    Cycles += OpTiming.SHIFT;
                     break;
                 default:
                     throw new NotImplementedException($"The op code {op:X2} has not been implemented yet.");

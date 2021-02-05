@@ -50,7 +50,7 @@ namespace GBemu
             GBVideo = new Texture2D(this.GraphicsDevice, GAMEBOY_WIDTH, GAMEBOY_HEIGHT, false, SurfaceFormat.Color);
             // TODO: use this.Content to load your game content here
             //gameBoy = new GameBoy(@"c:\roms\Tetris (W) (V1.1) [!].gb");
-            gameBoy = new GameBoy(@"c:\roms\test\04-op r,imm.gb");
+            gameBoy = new GameBoy(@"c:\roms\test\09-op r,r.gb");
         }
 
         /// <summary>
