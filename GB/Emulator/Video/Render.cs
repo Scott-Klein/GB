@@ -118,8 +118,8 @@ namespace GB.Emulator.Video
             byte lsb = tileBytes[(offsetY << 1) + 1];
 
             //Extract the high bit, low bit, bitwise or them together.
-            int bitH = ((0x80 >> offsetX) & msb);
-            int bitL = ((0x80 >> offsetX) & lsb);
+            int bitH = ((0x80 >> offsetX) & lsb);
+            int bitL = ((0x80 >> offsetX) & msb);
             return ((bitH > 0 ? 0x2 : 0x0) | (bitL > 0 ? 0x1 : 0x0));
 
             //convert to the current pallette
@@ -210,7 +210,14 @@ namespace GB.Emulator.Video
                         for (int xPos = sprites[i].Xpos; xPos < sprites[i].Xpos + 8; xPos++)
                         {
                             var color = GetTilePixel(yOffset, xPos - sprites[i].Xpos, tile);
-                            rawPixels[(ScanLine * GB_SCREEN_WIDTH) + xPos] = SpriteColor(color, sprites[i].Flags & 0x10);
+                            var spriteColor = SpriteColor(color, sprites[i].Flags & 0x10);
+                            
+                            //0 is always transparent.
+                            if (spriteColor != 0)
+                            {
+                                rawPixels[(ScanLine * GB_SCREEN_WIDTH) + xPos - 8] = SpriteColor(color, sprites[i].Flags & 0x10);
+                            }
+                            
                         }
                     }
                 }
@@ -253,7 +260,7 @@ namespace GB.Emulator.Video
         private int SpriteColor(int raw, int palleteId)
         {
             byte palette;
-            if (BP0 == 0)
+            if (palleteId == 0)
             {
                 palette = BP0;
             }
