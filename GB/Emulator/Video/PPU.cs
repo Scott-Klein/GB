@@ -1,5 +1,5 @@
-﻿using System;
-using GB.Emulator.Video;
+﻿using GB.Emulator.Video;
+using System;
 
 namespace GB.Emulator
 {
@@ -22,6 +22,7 @@ namespace GB.Emulator
                 return (Value & 0x40) > 0;
             }
         }
+
         public bool WindowEnable_5
         {
             get
@@ -29,6 +30,7 @@ namespace GB.Emulator
                 return (Value & 0x20) > 0;
             }
         }
+
         public bool BGWindowTileSet_4
         {
             get
@@ -36,6 +38,7 @@ namespace GB.Emulator
                 return (Value & 0x10) > 0;
             }
         }
+
         public bool BGTileMap_3
         {
             get
@@ -43,6 +46,7 @@ namespace GB.Emulator
                 return (Value & 0x8) > 0;
             }
         }
+
         public bool SpriteSize_2
         {
             get
@@ -50,6 +54,7 @@ namespace GB.Emulator
                 return (Value & 0x4) > 0;
             }
         }
+
         public bool SpritesEnabled_1
         {
             get
@@ -57,6 +62,7 @@ namespace GB.Emulator
                 return (Value & 0x2) > 0;
             }
         }
+
         public bool BGEnabled_0
         {
             get
@@ -73,9 +79,11 @@ namespace GB.Emulator
         SearchOAMRAM,
         Transferring
     }
+
     public class STATRegisters
     {
         private byte _value = 0x84;
+
         public byte Value
         {
             get
@@ -88,7 +96,6 @@ namespace GB.Emulator
             }
         }
 
-
         public bool LYC_Compare_Enable_6
         {
             get
@@ -100,6 +107,7 @@ namespace GB.Emulator
                 throw new AccessViolationException("LYC is set via bytes");
             }
         }
+
         public bool Mode2OAMcheckEnable_5
         {
             get
@@ -157,9 +165,11 @@ namespace GB.Emulator
 
         public ScreenMode ScreenMode { get; set; }
     }
+
     public class PPU
     {
         private bool vBlank;
+
         public bool V_BLANK
         {
             get
@@ -191,6 +201,7 @@ namespace GB.Emulator
         private byte stat;
         public Render Renderer;
         private byte scanLine;
+
         public byte Scanline
         {
             get
@@ -210,7 +221,6 @@ namespace GB.Emulator
 
         private int Cycle;
 
-
         public PPU(Clock clock)
         {
             VRAM = new byte[VRAM_SIZE];
@@ -227,13 +237,13 @@ namespace GB.Emulator
             //catch up with the cpu.
             while (this.totalCycles < clock.Cycles)
             {
+                this.totalCycles += 4;
+                
                 if (!LCDC.LCD_7 || startup)
                 {
                     return;
                 }
-                this.totalCycles += 4;
                 Cycle += 4;
-
                 if (Scanline <= 143)
                 {
                     //handle mode
@@ -252,6 +262,7 @@ namespace GB.Emulator
                 }
             }
         }
+
         private void VBlank()
         {
             if (Cycle == 4)
@@ -277,10 +288,12 @@ namespace GB.Emulator
                 case 80:
                     ModeUpdate(ScreenMode.Transferring);
                     break;
+
                 case 252:
                     ModeUpdate(ScreenMode.HBlank);
                     Renderer.RenderLine(Scanline);
                     break;
+
                 case 456:
                     Cycle = 0;
                     Scanline++;
@@ -339,41 +352,51 @@ namespace GB.Emulator
                 case 0xff40:
                     LCDC.Value = value;
                     break;
+
                 case 0xff44:
                     break;
+
                 case 0xff47:
                     BGP = value;
                     break;
+
                 case 0xff41:
                     STAT.Value = value;
                     break;
+
                 case 0xff42:
                     Renderer.SCY = value;
                     break;
+
                 case 0xff43:
                     Renderer.SCX = value;
                     break;
+
                 case 0xff4b:
                     Renderer.WX = value;
                     break;
+
                 case 0xff4a:
                     Renderer.WY = value;
                     break;
+
                 case 0xff48:
                     Renderer.BP0 = value;
                     break;
+
                 case 0xff49:
                     Renderer.BP1 = value;
                     break;
-                    //trigger DMA Transfer
+                //trigger DMA Transfer
                 case 0xff46:
                     var DMAaddr = value << 8;
                     for (int i = 0; i < OAM.Length; i++)
                     {
                         OAM[i] = mmu.rb(DMAaddr + i);
                     }
-                    
+
                     break;
+
                 default:
                     throw new NotImplementedException("Can't right to the address yet");
                     break;
@@ -381,16 +404,18 @@ namespace GB.Emulator
         }
 
         private byte BGP;
+
         public byte ReadByte(int addr)
         {
             return (byte)this.ReadByte((ushort)addr);
         }
+
         public byte ReadByte(ushort addr)
         {
             return addr switch
             {
                 var a when a >= VRAM_START && a <= VRAM_END => VRAM[addr & VRAM_SIZE],
-                var a when a >= OAM_START && a <= OAM_END => OAM[addr & OAM_SIZE],
+                var a when a >= OAM_START && a <= OAM_END => OAM[addr & 0xff],
                 0xff41 => stat,
                 0xff42 => this.Renderer.SCY,
                 0xff43 => this.Renderer.SCX,

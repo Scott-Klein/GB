@@ -63,11 +63,11 @@ namespace GB.Emulator.Video
                 RenderBackGround();
                 RenderWindow();
             }
-            else
+            if (LCDC.SpritesEnabled_1)
             {
-                //Set the entire scanline white.
+                RenderSprite();
             }
-            RenderSprite();
+            
         }
         private int BGColor(int raw)
         {
@@ -161,6 +161,10 @@ namespace GB.Emulator.Video
         private void RenderSprite()
         {
             int spriteHeight = 8;
+            if (LCDC.SpriteSize_2)
+            {
+                throw new NotImplementedException("Cannot yet handle double height sprites");
+            }
             if (LCDC.SpritesEnabled_1)
             {
                 List<Sprite> sprites = new List<Sprite>();
@@ -176,12 +180,14 @@ namespace GB.Emulator.Video
                 for (ushort sprite = 0xfe00; sprite < 0xfe9f; sprite += 4)
                 {
                     Sprite s = new Sprite();
+
+                    s.Xpos = ppu.ReadByte(sprite + 1);
+                    if (s.Xpos <= 0)
+                        continue;
                     s.Ypos = ppu.ReadByte(sprite);
                     if ((ScanLine + 16) < s.Ypos || (ScanLine + 16) > (s.Ypos + spriteHeight))
                         continue;
-                    s.Xpos = ppu.ReadByte(sprite + 1);
-                    if (s.Xpos < 0)
-                        continue;
+                    
                     s.TileNum = ppu.ReadByte(sprite + 2);
                     s.Flags = ppu.ReadByte(sprite + 3);
 
@@ -195,16 +201,17 @@ namespace GB.Emulator.Video
                 {
                     //get the tile
                     byte[] tile = new byte[TILE_BYTE_SIZE];
-                    for (int j = 0; j < TILE_BYTE_SIZE; j++)
-                    {
-                        tile[j] = VRAM[(sprites[i].TileNum * TILE_BYTE_SIZE) + j];
-                    }
 
-                    int yOffset = ScanLine - sprites[i].Ypos;
-                    for (int xPos = sprites[i].Xpos; xPos < sprites[i].Xpos + 8; xPos++)
+                    //Array.Copy(VRAM, tileId * TILE_BYTE_SIZE, tile, 0, TILE_BYTE_SIZE);
+                    Array.Copy(VRAM, sprites[i].TileNum * TILE_BYTE_SIZE, tile, 0, TILE_BYTE_SIZE);
+                    int yOffset = ScanLine - (sprites[i].Ypos - 0x10 );
+                    if (yOffset < 8 && yOffset >= 0)
                     {
-                        var color = GetTilePixel(yOffset, xPos, tile);
-                        rawPixels[(ScanLine * GB_SCREEN_WIDTH) + xPos] = SpriteColor(color, sprites[i].Flags & 0x10);
+                        for (int xPos = sprites[i].Xpos; xPos < sprites[i].Xpos + 8; xPos++)
+                        {
+                            var color = GetTilePixel(yOffset, xPos - sprites[i].Xpos, tile);
+                            rawPixels[(ScanLine * GB_SCREEN_WIDTH) + xPos] = SpriteColor(color, sprites[i].Flags & 0x10);
+                        }
                     }
                 }
             }

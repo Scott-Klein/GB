@@ -95,7 +95,7 @@ namespace GB.Emulator
                 var a when a >= 0xff40 && a <= 0xff4b => ppu.ReadByte(addr),
                 var a when a >= 0xff04 && a <= 0xff07 => clock.ReadByte(addr),
                 var a when a >= 0xff80 && a <= 0xfffe => HRAM[0x7f & addr],
-                var a when a >= 0xff00 && a <= 0xff7f => this.IOregisters[0xff & a],
+                var a when a >= 0xff00 && a <= 0xff7f => a == 0xff00 ? 0xff : this.IOregisters[0xff & a],
                 var a when a >= 0xfea0 && a <= 0xfeff => 0xff
             };
             throw new NotImplementedException();

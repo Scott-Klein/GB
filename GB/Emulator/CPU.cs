@@ -52,7 +52,7 @@ namespace GB.Emulator
         public void Tick()
         {
             byte op;
-            Cycles = 0;
+            
             InterruptRoutine();
 
             if (!Halt1)
@@ -74,6 +74,7 @@ namespace GB.Emulator
         {
             clock.Tick(Cycles + ControlUnit.Cycles);
             ControlUnit.Cycles = 0;
+            Cycles = 0;
             mmu.Tick();
         }
 
@@ -650,11 +651,11 @@ namespace GB.Emulator
                     break;
                 //RES
                 case <= 0xbf:
-                    ControlUnit.RES(((op >> 3) & 0x7), r8Value);
+                    Registers.SetRegById(regId, ControlUnit.RES(((op >> 3) & 0x7), r8Value));
                     break;
                 //SET
                 case <= 0xff:
-                    ControlUnit.SET(((op >> 3) & 0x7), r8Value);
+                    Registers.SetRegById(regId, ControlUnit.SET(((op >> 3) & 0x7), r8Value));
                     break;
 
                 default:

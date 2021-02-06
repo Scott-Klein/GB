@@ -50,7 +50,7 @@ namespace GBemu
             GBVideo = new Texture2D(this.GraphicsDevice, GAMEBOY_WIDTH, GAMEBOY_HEIGHT, false, SurfaceFormat.Color);
             // TODO: use this.Content to load your game content here
             //gameBoy = new GameBoy(@"c:\roms\Tetris (W) (V1.1) [!].gb");
-            gameBoy = new GameBoy(@"c:\roms\test\09-op r,r.gb");
+            gameBoy = new GameBoy(@"c:\roms\tetris.gb");
         }
 
         /// <summary>
@@ -92,16 +92,16 @@ namespace GBemu
                 switch(n)
                 {
                     case 0:
-                        finalPixels[i] = new Color(155, 188, 15);
+                        finalPixels[i] = new Color(255, 255, 255);
                         break;
                     case 1:
-                        finalPixels[i] = new Color(139, 172, 15);
+                        finalPixels[i] = new Color(170, 170, 170);
                         break;
                     case 2:
-                        finalPixels[i] = new Color(48, 98, 48);
+                        finalPixels[i] = new Color(85, 85, 85);
                         break;
                     case 3:
-                        finalPixels[i] = new Color(15, 56, 15);
+                        finalPixels[i] = new Color(0, 0, 0);
                         break;
                 }
             }
