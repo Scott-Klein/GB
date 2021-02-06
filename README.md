@@ -1,5 +1,5 @@
 # GB
-Newly started project, does not run any roms as of yet.
+Newly started project, Tetris runs perfectly, Pokemon with glitches. Nothing else has been tested yet.
 
 ## Components completed
 * Cartridge
