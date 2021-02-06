@@ -96,20 +96,26 @@ namespace GB.Emulator.Video
 
             for (int i = 0; i < TILE_COLUMNS; i++)
             {
-                byte[] tile = new byte[TILE_BYTE_SIZE];
                 var tileId = VRAM[(BGTileOffset - 0x8000) + index + i];
-                if (LCDC.BGWindowTileSet_4)
-                {
-                    Array.Copy(VRAM, tileId * TILE_BYTE_SIZE, tile, 0, TILE_BYTE_SIZE);
-                }
-                else
-                {
-                    Array.Copy(VRAM, 0x1000 + ((sbyte)tileId * TILE_BYTE_SIZE), tile, 0, TILE_BYTE_SIZE);
-                }
-
+                var tile = GetTile(tileId);
                 Cache[i] = tile;
             }
             return Cache;
+        }
+        private byte[] GetTile(int tileId)
+        {
+            byte[] tile = new byte[TILE_BYTE_SIZE];
+
+            if (LCDC.BGWindowTileSet_4)
+            {
+                Array.Copy(VRAM, tileId * TILE_BYTE_SIZE, tile, 0, TILE_BYTE_SIZE);
+            }
+            else
+            {
+                var off = 0x1000 + ((sbyte)tileId * TILE_BYTE_SIZE);
+                Array.Copy(VRAM, off, tile, 0, TILE_BYTE_SIZE);
+            }
+            return tile;
         }
 
         private int GetTilePixel(int offsetY, int offsetX, byte[] tileBytes)
@@ -147,7 +153,7 @@ namespace GB.Emulator.Video
             {
                 absoluteX = SCX + i;
                 int tile = absoluteX >> 3;
-                var tileBytes = TileMapCache[tile];
+                var tileBytes = TileMapCache[tile % 0x20];
                 int OffsetX = absoluteX & 0x7;
                 int OffsetY = absoluteY & 0x7;
 
@@ -161,10 +167,7 @@ namespace GB.Emulator.Video
         private void RenderSprite()
         {
             int spriteHeight = 8;
-            if (LCDC.SpriteSize_2)
-            {
-                throw new NotImplementedException("Cannot yet handle double height sprites");
-            }
+
             if (LCDC.SpritesEnabled_1)
             {
                 List<Sprite> sprites = new List<Sprite>();
@@ -197,14 +200,17 @@ namespace GB.Emulator.Video
                     }
                 }
 
-                for (int i = 0; i < sprites.Count; i++)
+                //count through the sprite buffer backwards,
+                //sprites that appear earlier in the buffer should go be on top, thus drawn last.
+                for (int i = sprites.Count - 1; i >= 0; i--)
                 {
-                    //get the tile
+                    int yOffset = ScanLine - (sprites[i].Ypos - 0x10);
                     byte[] tile = new byte[TILE_BYTE_SIZE];
+                    Array.Copy(VRAM, sprites[i].TileNum * TILE_BYTE_SIZE, tile, 0, TILE_BYTE_SIZE);
 
                     //Array.Copy(VRAM, tileId * TILE_BYTE_SIZE, tile, 0, TILE_BYTE_SIZE);
-                    Array.Copy(VRAM, sprites[i].TileNum * TILE_BYTE_SIZE, tile, 0, TILE_BYTE_SIZE);
-                    int yOffset = ScanLine - (sprites[i].Ypos - 0x10 );
+                    //Array.Copy(VRAM, sprites[i].TileNum * TILE_BYTE_SIZE, tile, 0, TILE_BYTE_SIZE);
+
                     if (yOffset < 8 && yOffset >= 0)
                     {
                         for (int xPos = sprites[i].Xpos; xPos < sprites[i].Xpos + 8; xPos++)
@@ -217,7 +223,6 @@ namespace GB.Emulator.Video
                             {
                                 rawPixels[(ScanLine * GB_SCREEN_WIDTH) + xPos - 8] = SpriteColor(color, sprites[i].Flags & 0x10);
                             }
-                            
                         }
                     }
                 }

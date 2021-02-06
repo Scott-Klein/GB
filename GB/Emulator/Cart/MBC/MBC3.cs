@@ -14,7 +14,11 @@ namespace GB.Emulator.Cart.MBC
         {
             if (addr <= 0x7fff)
             {
-                return base.ReadByte(addr);
+                return addr switch
+                {
+                    var a when a <= 0x3fff => this.ROM[addr],
+                    _ => this.ROM[(lowBank * 0x4000) + (addr & 0x3fff)]
+                };
             }
             if (ramEnable)
             {

@@ -372,6 +372,10 @@ namespace GB.Emulator
                     Renderer.SCX = value;
                     break;
 
+                case 0xff45:
+                    ScanLineC = value;
+                    break;
+
                 case 0xff4b:
                     Renderer.WX = value;
                     break;
@@ -416,6 +420,7 @@ namespace GB.Emulator
             {
                 var a when a >= VRAM_START && a <= VRAM_END => VRAM[addr & VRAM_SIZE],
                 var a when a >= OAM_START && a <= OAM_END => OAM[addr & 0xff],
+                0xff40 => LCDC.Value,
                 0xff41 => stat,
                 0xff42 => this.Renderer.SCY,
                 0xff43 => this.Renderer.SCX,

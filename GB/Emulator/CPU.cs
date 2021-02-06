@@ -54,7 +54,10 @@ namespace GB.Emulator
             byte op;
             
             InterruptRoutine();
-
+            if (Registers.PC == 0x58B0)
+            {
+                Registers.A = Registers.A;
+            }
             if (!Halt1)
             {
                 //fetch;

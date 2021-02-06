@@ -132,6 +132,7 @@ namespace GB.Emulator
                     //Cart ram?
                     rom.WriteByte(addr, value);
                     break;
+
                 case var a when a >= 0xc000 && a <= 0xdfff:
                     RAM[addr & 0x1fff] = value;
                     break;
@@ -157,6 +158,9 @@ namespace GB.Emulator
                     IOregisters[addr & 0x00ff] = value;
                     break;
                 case var a when a >= 0xfea0 && a <= 0xfeff:
+                    break;
+                case var a when a >= 0xe000 && a <= 0xfdff:
+                    //RAM[addr & 0x1fff] = value;
                     break;
                 default:
                     throw new NotImplementedException($"{addr:X2}  :  Address isn't able to be written to.");
