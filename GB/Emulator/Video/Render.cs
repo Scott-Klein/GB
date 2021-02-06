@@ -34,9 +34,9 @@ namespace GB.Emulator.Video
 
         private int winTileRow;
 
-        public int WX;
+        public byte WX;
 
-        public int WY;
+        public byte WY;
 
         public Render(PPU ppu, LCDCRegisters regs, byte[] vram)
         {
@@ -216,13 +216,17 @@ namespace GB.Emulator.Video
                         for (int xPos = sprites[i].Xpos; xPos < sprites[i].Xpos + 8; xPos++)
                         {
                             var color = GetTilePixel(yOffset, xPos - sprites[i].Xpos, tile);
-                            var spriteColor = SpriteColor(color, sprites[i].Flags & 0x10);
-                            
-                            //0 is always transparent.
-                            if (spriteColor != 0)
+                            if (color == 0)
                             {
-                                rawPixels[(ScanLine * GB_SCREEN_WIDTH) + xPos - 8] = SpriteColor(color, sprites[i].Flags & 0x10);
+                                continue;
                             }
+                            var spriteColor = SpriteColor(color, sprites[i].Flags & 0x10);
+                            rawPixels[(ScanLine * GB_SCREEN_WIDTH) + xPos - 8] = SpriteColor(color, sprites[i].Flags & 0x10);
+                            //0 is always transparent.
+                            //if (spriteColor != 0)
+                            //{
+                            //    
+                            //}
                         }
                     }
                 }
@@ -231,9 +235,8 @@ namespace GB.Emulator.Video
 
         private void RenderWindow()
         {
-            WY = ppu.ReadByte(0xff4a);
-            WX = ppu.ReadByte(0xff4b) - 7;
-            if (ScanLine < WY || !LCDC.WindowEnable_5 || WX >= 160)
+            int wxCorrected = WX - 7;
+            if (ScanLine < WY || !LCDC.WindowEnable_5 || wxCorrected - 7 >= 160)
             {
                 return;
             }
@@ -243,15 +246,15 @@ namespace GB.Emulator.Video
             int offsetY = ScanLine - WY;
             if (offsetY >> 3 != winTileRow)
             {
-                TileMapCache = CacheBackgroundRow(offsetY);
+                TileMapCache = CacheBackgroundRow(offsetY >> 3);
             }
             int offsetX;
 
-            offsetY = offsetY & 3;//get the sub tile offset.
-            for (int i = WX; i < GB_SCREEN_WIDTH; i++)
+            offsetY = offsetY & 7;//get the sub tile offset.
+            for (int i = wxCorrected; i < GB_SCREEN_WIDTH; i++)
             {
-                offsetX = i - WX;
-                var tileBytes = TileMapCache[(i - WX) >> 3];
+                offsetX = i - wxCorrected;
+                var tileBytes = TileMapCache[(i - wxCorrected) >> 3];
 
                 //get the sub tile offset
                 offsetX = offsetX & 0x7;

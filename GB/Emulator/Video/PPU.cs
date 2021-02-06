@@ -427,6 +427,10 @@ namespace GB.Emulator
                 0xff44 => Scanline,
                 0xff45 => ScanLineC,
                 0xff47 => BGP,
+                0xff4a => Renderer.WY,
+                0xff4b => Renderer.WX,
+                0xff48 => Renderer.BP0,
+                0xff49 => Renderer.BP1,
                 _ => 0xff
             };
         }
