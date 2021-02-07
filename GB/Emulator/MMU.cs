@@ -70,6 +70,7 @@ namespace GB.Emulator
         public void Tick()
         {
             ppu.Tick();
+            sound.Tick();
         }
         private void InitialiseMemory()
         {

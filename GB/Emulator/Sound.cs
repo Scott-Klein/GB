@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Xna.Framework.Audio;
 
 namespace GB.Emulator
 {
@@ -39,38 +40,104 @@ namespace GB.Emulator
         private byte NR51; // Selection of sound output tuerminal
 
         private byte NR52; // Sound on/off
-
+        public DynamicSoundEffectInstance Channel_1;
+        public DynamicSoundEffectInstance Channel_2;
         private byte[] WavePatternRam;
-        private const float SAMPLE_RATE = 44100f;
+        private const float SAMPLE_RATE = 22000f;
         private const short SQUARE_HIGH = -32768;
         private const short SQUARE_LOW = 32767;
         public byte[] CHANNEL1 { get; set; }
         public BinaryWriter writer;
+        public Queue<byte[]> CH1q;
+        public Queue<byte[]> CH2q;
 
         public void Tick()
         {
-            if (ReadyCh1)
+            SubmitBuffers();
+
+            //channel 1 repeat if no new sounds requested.
+            if (((NR14 & 0x40) == 0 && Channel_1.PendingBufferCount < 2) || (NR14 & 0x80) > 0)
             {
-                int ch1Freq = NR13 | ((NR14 & 7) << 8);
-                float freq = 131072f / (2048 - ch1Freq);// convert to hertz
-                float lengthInSeconds = (64 - NR11 & 0x3f) * (1f / 256f);
-                if (lengthInSeconds < 0.0001)
-                {
-                    ReadyCh1 = false;
-                }
-                else
-                {
-                    CHANNEL1 = CreateTone(freq, lengthInSeconds);
-                }
+                NR14 = (byte)(NR14 & 0x7f);
+                EnQueueCh1();
+            }
+
+            if (((NR24 & 0x40) == 0 && Channel_2.PendingBufferCount < 2) || (NR24 & 0x80) > 0)
+            {
+                NR24 = (byte)(NR24 & 0x7f);
+                EnQueueCh2();
             }
 
         }
 
-        private byte[] CreateTone(float freq, float length)
+        private void SubmitBuffers()
+        {
+            while (CH1q.Count > 0)
+            {
+                Channel_1.SubmitBuffer(CH1q.Dequeue());
+            }
+            while (CH2q.Count > 0)
+            {
+                Channel_2.SubmitBuffer(CH2q.Dequeue());
+            }
+        }
+
+        public void EnQueueCh1()
+        {
+            int ch1Freq = NR13 | ((NR14 & 7) << 8);
+            float freq = 131072f / (2048 - ch1Freq);// convert to hertz
+            float lengthInSeconds = (0x40 & NR14) > 0 ?(64 - NR11 & 0x3f) * (1f / 256f): 0.5f;
+            WaveDuty duty = (WaveDuty)(NR11 >> 6);
+            if (lengthInSeconds > 0.0001)
+            {
+                CH1q.Enqueue(CreateTone(freq, lengthInSeconds, duty));
+            }
+        }
+        public void EnQueueCh2()
+        {
+            int ch2Freq = NR23 | ((NR24 & 7) << 8);
+            float freq = 131072f / (2048 - ch2Freq);// convert to hertz
+            float lengthInSeconds = (0x40 & NR24) > 0 ? (64 - NR21 & 0x3f) * (1f / 256f) : 0.5f;
+            WaveDuty duty = (WaveDuty)(NR21 >> 6);
+            if (lengthInSeconds > 0.0001)
+            {
+                CH2q.Enqueue(CreateTone(freq, lengthInSeconds, duty));
+            }
+        }
+
+
+
+        private byte[] CreateTone(float freq, float length, WaveDuty waveDuty = WaveDuty.w50)
         {
             byte[] result = new byte[(Convert.ToInt32(length * SAMPLE_RATE)) & 0xfffffffe];
             float samplesPeriod = SAMPLE_RATE / freq;
-            bool high = true;
+
+            float lowCycles;
+            float highCycles;
+
+            switch (waveDuty)
+            {
+                case WaveDuty.w125:
+                    lowCycles = 0.125f;
+                    highCycles = 1-lowCycles;
+                    break;
+                case WaveDuty.w25:
+                    lowCycles = 0.25f;
+                    highCycles = 1 - lowCycles;
+                    break;
+                case WaveDuty.w50:
+                    lowCycles = 0.5f;
+                    highCycles = 1 - lowCycles;
+                    break;
+                case WaveDuty.w75:
+                    lowCycles = 0.75f;
+                    highCycles = 1 - lowCycles;
+                    break;
+                default:
+                    lowCycles = 0.5f;
+                    highCycles = 0.5f;
+                    break;
+            }
 
             for (int i = 0; i < result.Length;)
             {
@@ -79,11 +146,16 @@ namespace GB.Emulator
                     continue;
                 }
 
-                high = !high;
-                for (int period = 0; period < samplesPeriod / 2; period++)
+
+                for (int period = 0; period < samplesPeriod * lowCycles; period++)
                 {
-                    result[i++ % result.Length] = high ? 0x00 : 0xff;
-                    result[i++ % result.Length] = high ? 0x80 : 0x7f;
+                    result[i++ % result.Length] =  0x00;
+                    result[i++ % result.Length] =  0x80;
+                }
+                for (int period = 0; period < samplesPeriod * highCycles; period++)
+                {
+                    result[i++ % result.Length] =  0xff;
+                    result[i++ % result.Length] =  0x7f;
                 }
             }
 
@@ -93,36 +165,31 @@ namespace GB.Emulator
         public Sound()
         {
             WavePatternRam = new byte[16];
-            CHANNEL1 = new byte[4096];
-            MemoryStream memoryStream = new MemoryStream(4096);
-            writer = new BinaryWriter(memoryStream);
+            CH1q = new Queue<byte[]>();
+            CH2q = new Queue<byte[]>();
         }
 
         public bool ReadyCh1;
 
         public void WriteByte(ushort addr, byte value)
         {
+            
             switch (addr)
             {
                 case 0xff10:
                     NR10 = value;
-                    ReadyCh1 = true;
                     break;
                 case 0xff11:
                     NR11 = value;
-                    ReadyCh1 = true;
                     break;
                 case 0xff12:
                     NR12 = value;
-                    ReadyCh1 = true;
                     break;
                 case 0xff13:
                     NR13 = value;
-                    ReadyCh1 = true;
                     break;
                 case 0xff14:
-                    NR14 = value;
-                    ReadyCh1 = true;
+                    NR14 = value;// we've already restarted the sound so mask it.
                     break;
                 case 0xff16:
                     NR21 = value;
@@ -205,5 +272,13 @@ namespace GB.Emulator
                 var a when a>= 0xff30 && a <= 0xff3f => WavePatternRam[a & 0xf]
             };
         }
+    }
+
+    public enum WaveDuty : byte
+    {
+        w125,
+        w25,
+        w50,
+        w75
     }
 }

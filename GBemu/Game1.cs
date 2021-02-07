@@ -11,11 +11,12 @@ namespace GBemu
     {
         private const int GAMEBOY_WIDTH = 160;
         private const int GAMEBOY_HEIGHT = 144;
-        private const int AUDIO_SAMPLE_RATE = 44100;
+        private const int AUDIO_SAMPLE_RATE = 22000;
         Texture2D GBVideo;
         Color[] finalPixels;
         GameBoy gameBoy;
         DynamicSoundEffectInstance ch1;
+        DynamicSoundEffectInstance ch2;
         SoundEffect sound;
 
         private GraphicsDeviceManager _graphics;
@@ -46,9 +47,12 @@ namespace GBemu
             this._graphics.ApplyChanges();
             GBVideo = new Texture2D(GraphicsDevice, GAMEBOY_WIDTH, GAMEBOY_HEIGHT);
             finalPixels = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
-            ch1 = new DynamicSoundEffectInstance(44100, AudioChannels.Mono);
+            ch1 = new DynamicSoundEffectInstance(AUDIO_SAMPLE_RATE, AudioChannels.Mono);
+            ch2 = new DynamicSoundEffectInstance(AUDIO_SAMPLE_RATE, AudioChannels.Mono);
             ch1.Play();
-
+            ch2.Play();
+            gameBoy.sound.Channel_1 = ch1;
+            gameBoy.sound.Channel_2 = ch2;
         }
 
         protected override void LoadContent()
@@ -72,20 +76,6 @@ namespace GBemu
             // TODO: Add your update logic here
             gameBoy.Run();
             base.Update(gameTime);
-
-            //handle Channel 1
-            if (gameBoy.sound.ReadyCh1)
-            {
-                gameBoy.sound.Tick();
-
-                if (ch1.PendingBufferCount < 5)
-                {
-                    ch1.SubmitBuffer(gameBoy.sound.CHANNEL1);
-                }
-                    
-                //reset now that we are reading the current bytes.
-                gameBoy.sound.ReadyCh1 = false;
-            }
         }
 
         protected override void Draw(GameTime gameTime)
