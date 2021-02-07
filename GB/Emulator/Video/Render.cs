@@ -17,9 +17,11 @@ namespace GB.Emulator.Video
         public byte SCY;
         private const int BG_TILE_ADDR_MASK = 0x3ff;
         private const int SPRITE_PRIORITY = 0x80;
+        private const int X_FLIP = 0x20;
+        private const int Y_FLIP = 0x40;
         private const int GB_SCREEN_HEIGHT = 144;
         private const int GB_SCREEN_WIDTH = 160;
-        private const int SPRITE_BUFFER_SIZE = 10;
+        private const int SPRITE_BUFFER_SIZE = 12; //10 is the correct number, but 12 is a work around for a graphical issue.
         private const int TILE_BYTE_SIZE = 16;
         private const int TILE_COLUMNS = 32;
         private const int TOTAL_SPRITES = 40;
@@ -217,7 +219,11 @@ namespace GB.Emulator.Video
                         for (int xPos = sprites[i].Xpos; xPos < sprites[i].Xpos + 8; xPos++)
                         {
                             int currentPixelAddress = (ScanLine * GB_SCREEN_WIDTH) + xPos - 8;
-                            var color = GetTilePixel(yOffset, xPos - sprites[i].Xpos, tile);
+
+                            //if the flip flag is set, iterate through the pixels in the opposite way.
+                            int xPixel = (sprites[i].Flags & X_FLIP) == 0 ? xPos - sprites[i].Xpos : 7 - (xPos - sprites[i].Xpos);
+
+                            var color = GetTilePixel(yOffset, xPixel, tile);
                             //if transparent OR if the sprite is to be rendered below back ground.
                             if (color == 0 || ((sprites[i].Flags & SPRITE_PRIORITY) > 0 && rawPixels[currentPixelAddress] != 0))
                             {
