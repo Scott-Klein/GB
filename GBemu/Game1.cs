@@ -1,5 +1,6 @@
 ﻿using Emulator;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
@@ -10,9 +11,12 @@ namespace GBemu
     {
         private const int GAMEBOY_WIDTH = 160;
         private const int GAMEBOY_HEIGHT = 144;
+        private const int AUDIO_SAMPLE_RATE = 44100;
         Texture2D GBVideo;
         Color[] finalPixels;
         GameBoy gameBoy;
+        DynamicSoundEffectInstance ch1;
+        SoundEffect sound;
 
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
@@ -42,6 +46,9 @@ namespace GBemu
             this._graphics.ApplyChanges();
             GBVideo = new Texture2D(GraphicsDevice, GAMEBOY_WIDTH, GAMEBOY_HEIGHT);
             finalPixels = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
+            ch1 = new DynamicSoundEffectInstance(44100, AudioChannels.Mono);
+            ch1.Play();
+
         }
 
         protected override void LoadContent()
@@ -65,6 +72,20 @@ namespace GBemu
             // TODO: Add your update logic here
             gameBoy.Run();
             base.Update(gameTime);
+
+            //handle Channel 1
+            if (gameBoy.sound.ReadyCh1)
+            {
+                gameBoy.sound.Tick();
+
+                if (ch1.PendingBufferCount < 5)
+                {
+                    ch1.SubmitBuffer(gameBoy.sound.CHANNEL1);
+                }
+                    
+                //reset now that we are reading the current bytes.
+                gameBoy.sound.ReadyCh1 = false;
+            }
         }
 
         protected override void Draw(GameTime gameTime)

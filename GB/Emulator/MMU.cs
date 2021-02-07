@@ -12,6 +12,7 @@ namespace GB.Emulator
         Cartridge rom;
         PPU ppu;
         private readonly Clock clock;
+        private readonly Sound sound;
         Joypad Joy;
         private byte _IF;
         public byte IE = 0xe1; //interrupt flags initial state is e1;
@@ -39,10 +40,11 @@ namespace GB.Emulator
         {
             InitialiseMemory();
         }
-        public MMU(Cartridge cartridge, PPU ppu, Clock clock, bool testing = false, byte testInstruction = 0x0)
+        public MMU(Cartridge cartridge, PPU ppu, Clock clock, Sound sound, bool testing = false, byte testInstruction = 0x0)
         {
             this.ppu = ppu;
             this.clock = clock;
+            this.sound = sound;
             Joy = new Joypad();
             ppu.SetMMU(this);
             InitialiseMemory();
@@ -95,6 +97,7 @@ namespace GB.Emulator
                 var a when a >= 0xff40 && a <= 0xff4b => ppu.ReadByte(addr),
                 var a when a >= 0xff04 && a <= 0xff07 => clock.ReadByte(addr),
                 var a when a >= 0xff80 && a <= 0xfffe => HRAM[0x7f & addr],
+                var a when a >= 0xff10 && a <= 0xff26 => sound.ReadByte(a),
                 var a when a >= 0xff00 && a <= 0xff7f => a == 0xff00 ? 0xff : this.IOregisters[0xff & a],
                 var a when a >= 0xfea0 && a <= 0xfeff => 0xff
             };
@@ -153,6 +156,9 @@ namespace GB.Emulator
                     break;
                 case var a when a >= 0xff04 && a <= 0xff07:
                     clock.WriteByte(a, value);
+                    break;
+                case var a when a >= 0xff10 && a <= 0xff26:
+                    sound.WriteByte(a, value);
                     break;
                 case var a when a >= 0xff00 && a <= 0xff7f:
                     IOregisters[addr & 0x00ff] = value;

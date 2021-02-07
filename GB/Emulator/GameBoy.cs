@@ -12,6 +12,7 @@ namespace Emulator
         private readonly CPU cpu;
         private readonly MMU memory;
         private readonly Clock clock;
+        public Sound sound;
         public bool PowerSwitch { get; set; }
         public Cartridge Cart { get { return this.cart; }  }
         public int[] Pixels { get { return this.ppu.Renderer.Pixels;  } }
@@ -23,7 +24,8 @@ namespace Emulator
 
             this.clock = new Clock();
             this.ppu = new PPU(clock);
-            this.memory = new MMU(this.cart, this.ppu, this.clock);
+            this.sound = new Sound();
+            this.memory = new MMU(this.cart, this.ppu, this.clock, sound);
             this.cpu = new CPU(this.memory, clock);
             this.PowerSwitch = true;
         }
