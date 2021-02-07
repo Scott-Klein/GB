@@ -16,6 +16,7 @@ namespace GB.Emulator.Video
         public byte SCX;
         public byte SCY;
         private const int BG_TILE_ADDR_MASK = 0x3ff;
+        private const int SPRITE_PRIORITY = 0x80;
         private const int GB_SCREEN_HEIGHT = 144;
         private const int GB_SCREEN_WIDTH = 160;
         private const int SPRITE_BUFFER_SIZE = 10;
@@ -215,18 +216,14 @@ namespace GB.Emulator.Video
                     {
                         for (int xPos = sprites[i].Xpos; xPos < sprites[i].Xpos + 8; xPos++)
                         {
+                            int currentPixelAddress = (ScanLine * GB_SCREEN_WIDTH) + xPos - 8;
                             var color = GetTilePixel(yOffset, xPos - sprites[i].Xpos, tile);
-                            if (color == 0)
+                            //if transparent OR if the sprite is to be rendered below back ground.
+                            if (color == 0 || ((sprites[i].Flags & SPRITE_PRIORITY) > 0 && rawPixels[currentPixelAddress] != 0))
                             {
                                 continue;
                             }
-                            var spriteColor = SpriteColor(color, sprites[i].Flags & 0x10);
-                            rawPixels[(ScanLine * GB_SCREEN_WIDTH) + xPos - 8] = SpriteColor(color, sprites[i].Flags & 0x10);
-                            //0 is always transparent.
-                            //if (spriteColor != 0)
-                            //{
-                            //    
-                            //}
+                            rawPixels[currentPixelAddress] = SpriteColor(color, sprites[i].Flags & 0x10);
                         }
                     }
                 }
