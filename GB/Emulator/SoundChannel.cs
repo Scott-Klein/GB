@@ -15,8 +15,6 @@ namespace GB.Emulator
         private int SAMPLE_RATE = 22000;
         private DynamicSoundEffectInstance Channel_Out;
 
-        private Queue<byte[]> OutBuffer;
-
         private double WaveDuty;
 
         private int EnvelopeSweep;
@@ -36,6 +34,9 @@ namespace GB.Emulator
         private bool Restart;
 
         private float SoundLength;
+
+        public bool ChannelOn { get; set; }
+
         public int FrequencyLo
         {
             set
@@ -64,17 +65,20 @@ namespace GB.Emulator
         {
             set
             {
-                switch(value >> 6)
+                switch (value >> 6)
                 {
                     case 0:
                         WaveDuty = 0.125;
                         break;
+
                     case 1:
                         WaveDuty = 0.25;
                         break;
+
                     case 2:
                         WaveDuty = 0.5;
                         break;
+
                     case 3:
                         WaveDuty = 0.75;
                         break;
@@ -111,8 +115,9 @@ namespace GB.Emulator
         public SoundChannel(DynamicSoundEffectInstance soundOutput)
         {
             Channel_Out = soundOutput;
+            Play = false;
         }
-
+        private bool Play;
         public void Tick()
         {
             if (Restart)
@@ -120,18 +125,64 @@ namespace GB.Emulator
                 //Stopping clears the buffer.
                 Channel_Out.Stop();
                 Channel_Out.Play();
+                Play = true;
+                ChannelOn = true;
             }
 
             //if looping and the buffer is empty, or starting a new sound.
-            if ((!PlayOnce && Channel_Out.PendingBufferCount < 4) || Restart)
+            if (((!PlayOnce && Channel_Out.PendingBufferCount < 4) || Restart) && Play)
             {
                 Channel_Out.SubmitBuffer(CreateTone());
                 Restart = false;
             }
         }
+
         private float CalcFreq(int registerFormattedByte)
         {
             return 131072 / (2048 - registerFormattedByte);
+        }
+
+        private byte[] CreateSweep()
+        {
+            
+            // Get the sweep time in seconds
+            float length = SweepTime * 0.0078f;
+
+            //the byte[] needs to be twice as long as it's an array of 16bit digits, each representing a sample.
+            //To get the correct array size multiply the sample rate by 2 so that the sound lasts for the period
+            // that it is meant to cover.
+            byte[] sweepTone = new byte[(int)(length * (SAMPLE_RATE * 2))];
+            // Convert the frequency to Hz
+            // (Frequency stored in bytes are not in herts and need to be converted.
+            float freq = CalcFreq(FrequencyShift);
+            if (freq > 0x7ff)
+            {
+                // If the value of frequency is greater than 2047, no sound is played,
+                // and the channel 1 flag of NR52 is reset.
+                ChannelOn = false;
+                return sweepTone;
+            }
+            // calculate lamda for the current frequency, 
+            // lambda will be in bytes as the sample rate
+            int samplesPeriod = (int)(SAMPLE_RATE / freq);
+
+            int periodsTotal = sweepTone.Length / samplesPeriod;
+            for (int period = 0; period < periodsTotal; period++)
+            {
+                for (int i = 0; i < samplesPeriod * WaveDuty;)
+                {
+                    sweepTone[(period * samplesPeriod) + i++] = 0x00;
+                    sweepTone[(period * samplesPeriod) + i++] = 0x80;
+                }
+                for (int i = 0; i < samplesPeriod * (1 - WaveDuty);)
+                {
+                    sweepTone[(period * samplesPeriod) + i++] = 0xff;
+                    sweepTone[(period * samplesPeriod) + i++] = 0x7f;
+                }
+            }
+            // Get the current tone shifted
+            SweepSet();
+            return sweepTone;
         }
 
         private byte[] CreateTone()
@@ -141,16 +192,13 @@ namespace GB.Emulator
             float length;
             if (SweepTime > 0 && SweepShift > 0)
             {
-                SweepSet();
-                freq = CalcFreq(FrequencyShift);
-                length = //
+                return CreateSweep();
             }
             else
             {
                 freq = CalcFreq(Frequency);
                 length = SoundLength;
             }
-
 
             int samplesPeriod = (int)(SAMPLE_RATE / freq);
             if (samplesPeriod % 2 != 0)
@@ -167,9 +215,7 @@ namespace GB.Emulator
                 result = new byte[samplesPeriod * (SAMPLE_RATE / samplesPeriod)];
             }
 
-
-
-            for (int i = 0; i < result.Length; i++)
+            for (int i = 0; i < result.Length;)
             {
                 //high portion of the wave
                 for (int period = 0; period < samplesPeriod * WaveDuty && i < result.Length; period++)
@@ -182,14 +228,13 @@ namespace GB.Emulator
                     result[i++] = 0xff;
                     result[i++] = 0x7f;
                 }
-
             }
             return result;
         }
 
         public void SweepSet()
         {
-            if (SweepAddition && SweepShift !=0)
+            if (SweepAddition && SweepShift != 0)
             {
                 FrequencyShift += FrequencyShift >> SweepShift;
             }

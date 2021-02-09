@@ -51,8 +51,8 @@ namespace GBemu
             ch2 = new DynamicSoundEffectInstance(AUDIO_SAMPLE_RATE, AudioChannels.Mono);
             ch1.Play();
             ch2.Play();
-            gameBoy.sound.Channel_1 = ch1;
-            gameBoy.sound.Channel_2 = ch2;
+            gameBoy.sound.CH1 = ch1;
+            gameBoy.sound.CH2 = ch2;
         }
 
         protected override void LoadContent()
