@@ -1,6 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Audio;
 using System;
-using System.Collections.Generic;
 
 namespace GB.Emulator
 {
@@ -10,32 +9,34 @@ namespace GB.Emulator
         public bool SweepAddition;
         public int SweepShift;
         public int SweepTime;
-        private const int SWEEP_ADDITION = 8;
-        private const uint EVEN_BUFFER = 0xfffffffe;
-        private int SAMPLE_RATE = 44000;
+        private const int AMP_LEVEL = 384;
+        private const int AMP_LEVEL_N = -384;
         //The length in samples that one step takes for envelope function calculations.
-        private const double EVELOPE_STEP_SAMPLES = (343.75 *2);
+        private const double EVELOPE_STEP_SAMPLES = (343.75 * 2);
+
+        private const uint EVEN_BUFFER = 0xfffffffe;
+        private const int SWEEP_ADDITION = 8;
         private DynamicSoundEffectInstance Channel_Out;
-
-        private double WaveDuty;
-
+        private int CurrentEnvelopeStep;
         private int EnvelopeSweep;
-
         private int FreqHi;
-
         private int FreqLo;
-
         private int Frequency;
         private float FrequencyHz;
         private bool IncreasingVolume;
         private int InitialVolume;
-        private int Volume;
-
+        private bool Play;
         private bool PlayOnce;
-
         private bool Restart;
-
+        private int SAMPLE_RATE = 44000;
         private float SoundLength;
+        private int Volume;
+        private double WaveDuty;
+        public SoundChannel(DynamicSoundEffectInstance soundOutput)
+        {
+            Channel_Out = soundOutput;
+            Play = false;
+        }
 
         public bool ChannelOn { get; set; }
 
@@ -60,6 +61,58 @@ namespace GB.Emulator
                 {
                     FrequencyShift = Frequency;
                 }
+            }
+        }
+
+        public short HighAmp
+        {
+            get
+            {
+                if (EnvelopeSweep == 0)
+                {
+                    return 0xf * AMP_LEVEL;
+                }
+                CurrentEnvelopeStep++;
+
+                if (CurrentEnvelopeStep > EVELOPE_STEP_SAMPLES * EnvelopeSweep)
+                {
+                    CurrentEnvelopeStep = 0;
+                    if (IncreasingVolume && Volume < 16)
+                    {
+                        Volume++;
+                    }
+                    else if (Volume > 0)
+                    {
+                        Volume--;
+                    }
+                }
+
+                return (short)(AMP_LEVEL_N * Volume);
+            }
+        }
+
+        public short LowAmp
+        {
+            get
+            {
+                if (EnvelopeSweep == 0)
+                {
+                    return 0xf * AMP_LEVEL_N;
+                }
+                CurrentEnvelopeStep++;
+                if (CurrentEnvelopeStep > EVELOPE_STEP_SAMPLES * EnvelopeSweep)
+                {
+                    CurrentEnvelopeStep = 0;
+                    if (IncreasingVolume && Volume < 16)
+                    {
+                        Volume++;
+                    }
+                    else if (Volume > 0)
+                    {
+                        Volume--;
+                    }
+                }
+                return (short)(AMP_LEVEL * Volume);
             }
         }
 
@@ -89,17 +142,12 @@ namespace GB.Emulator
             }
         }
 
-        private float CalcLength(int lengthAsByte)
-        {
-            return (64f - lengthAsByte) * (1f / 256f);
-        }
-
         public int SweepRegister
         {
             set
             {
                 SweepTime = value >> 4;
-                SweepAddition = (value & SWEEP_ADDITION) > 0;
+                SweepAddition = (value & SWEEP_ADDITION) == 0;
                 SweepShift = 0x7 & value;
             }
         }
@@ -114,12 +162,24 @@ namespace GB.Emulator
             }
         }
 
-        public SoundChannel(DynamicSoundEffectInstance soundOutput)
+        public void SweepSet()
         {
-            Channel_Out = soundOutput;
-            Play = false;
+            if (SweepAddition && SweepShift != 0)
+            {
+                FrequencyShift += FrequencyShift >> SweepShift;
+            }
+            else if (SweepShift != 0)
+            {
+                FrequencyShift -= FrequencyShift >> SweepShift;
+            }
+            if (FrequencyShift > 0x7ff)
+            {
+                // If the value of frequency is greater than 2047, no sound is played,
+                // and the channel 1 flag of NR52 is reset.
+                ChannelOn = false;
+            }
         }
-        private bool Play;
+
         public void Tick()
         {
             if (Restart)
@@ -133,7 +193,7 @@ namespace GB.Emulator
             }
 
             //if looping and the buffer is empty, or starting a new sound.
-            if (((!PlayOnce && Channel_Out.PendingBufferCount < 4) || Restart) && Play)
+            if (((!PlayOnce && Channel_Out.PendingBufferCount < 8) || Restart) && Play)
             {
                 Channel_Out.SubmitBuffer(CreateTone());
                 Restart = false;
@@ -145,9 +205,12 @@ namespace GB.Emulator
             return 131072 / (2048 - registerFormattedByte);
         }
 
+        private float CalcLength(int lengthAsByte)
+        {
+            return (64f - lengthAsByte) * (1f / 256f);
+        }
         private byte[] CreateSweep()
         {
-            
             // Get the sweep time in seconds
             float length = SweepTime * 0.0078f;
 
@@ -159,10 +222,9 @@ namespace GB.Emulator
             // (Frequency stored in bytes are not in herts and need to be converted.
             float freq = CalcFreq(FrequencyShift);
 
-
-            // calculate lamda for the current frequency, 
+            // calculate lamda for the current frequency,
             // lambda will be in bytes as the sample rate
-            int samplesPeriod = (int)(SAMPLE_RATE *2 / freq);
+            int samplesPeriod = (int)(SAMPLE_RATE * 2 / freq);
             short high;
             short low;
             int periodsTotal = sweepTone.Length / samplesPeriod;
@@ -179,65 +241,13 @@ namespace GB.Emulator
                 {
                     low = LowAmp;
                     sweepTone[(period * samplesPeriod) + i++] = (byte)(low & 0xff);//0xff;
-                    sweepTone[(period * samplesPeriod) + i++] = (byte)((low & 0xff00)>> 8);//0x7f;
+                    sweepTone[(period * samplesPeriod) + i++] = (byte)((low & 0xff00) >> 8);//0x7f;
                 }
             }
             // Get the current tone shifted
             SweepSet();
             return sweepTone;
         }
-        private const int AMP_LEVEL = 2047;
-        private int CurrentEnvelopeStep;
-
-        public short HighAmp 
-        { 
-            get
-            {
-                if (EnvelopeSweep == 0)
-                {
-                    return 0xf * AMP_LEVEL;
-                }
-                CurrentEnvelopeStep++;
-
-                if (CurrentEnvelopeStep > EVELOPE_STEP_SAMPLES * EnvelopeSweep)
-                {
-                    CurrentEnvelopeStep = 0;
-                    if (IncreasingVolume && Volume < 16)
-                    {
-                        Volume++;
-                    }
-                    else if(Volume > 0)
-                    {
-                        Volume--;
-                    }
-                }
-                
-
-                return (short)(AMP_LEVEL * Volume);
-            }
-        }
-
-        public short LowAmp {
-            get
-            {
-                CurrentEnvelopeStep++;
-                if (CurrentEnvelopeStep > EVELOPE_STEP_SAMPLES * EnvelopeSweep)
-                {
-                    CurrentEnvelopeStep = 0;
-                    if (IncreasingVolume && Volume < 16)
-                    {
-                        Volume++;
-                    }
-                    else if (Volume > 0)
-                    {
-                        Volume--;
-                    }
-                }
-                return (short)(AMP_LEVEL * Volume * -1);
-            }
-
-        }
-
         private byte[] CreateTone()
         {
             byte[] result;
@@ -250,7 +260,6 @@ namespace GB.Emulator
             else
             {
                 freq = CalcFreq(Frequency);
-                length = SoundLength;
             }
 
             int samplesPeriod = (int)(SAMPLE_RATE / freq);
@@ -260,7 +269,7 @@ namespace GB.Emulator
             }
             if (PlayOnce)
             {
-                result = new byte[(Convert.ToInt32(SoundLength * SAMPLE_RATE) & EVEN_BUFFER)];
+                result = new byte[(Convert.ToInt32(SoundLength * SAMPLE_RATE * 2) & EVEN_BUFFER)];
             }
             else
             {
@@ -288,24 +297,6 @@ namespace GB.Emulator
                 }
             }
             return result;
-        }
-
-        public void SweepSet()
-        {
-            if (SweepAddition && SweepShift != 0)
-            {
-                FrequencyShift += FrequencyShift >> SweepShift;
-            }
-            else if (SweepShift != 0)
-            {
-                FrequencyShift -= FrequencyShift >> SweepShift;
-            }
-            if (FrequencyShift > 0x7ff)
-            {
-                // If the value of frequency is greater than 2047, no sound is played,
-                // and the channel 1 flag of NR52 is reset.
-                ChannelOn = false;
-            }
         }
     }
 }
