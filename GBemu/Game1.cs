@@ -11,7 +11,7 @@ namespace GBemu
     {
         private const int GAMEBOY_WIDTH = 160;
         private const int GAMEBOY_HEIGHT = 144;
-        private const int AUDIO_SAMPLE_RATE = 22000;
+        private const int AUDIO_SAMPLE_RATE = 44000;
         Texture2D GBVideo;
         Color[] finalPixels;
         GameBoy gameBoy;
