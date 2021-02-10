@@ -122,7 +122,7 @@ namespace GB.Emulator
                 Channel_One.Tick();
                 Channel_Two.Tick();
             }
-            NR52 = Channel_One.ChannelOn ? (byte)(NR52 | SOUND_ONE_ON_FLAG) : (byte)(NR52 & (~SOUND_ONE_ON_FLAG));
+            //NR52 = Channel_One.ChannelOn ? (byte)(NR52 | SOUND_ONE_ON_FLAG) : (byte)(NR52 & (~SOUND_ONE_ON_FLAG));
         }
 
         public void WriteByte(ushort addr, byte value)
