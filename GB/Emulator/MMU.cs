@@ -158,7 +158,7 @@ namespace GB.Emulator
                 case var a when a >= 0xff04 && a <= 0xff07:
                     clock.WriteByte(a, value);
                     break;
-                case var a when a >= 0xff10 && a <= 0xff26:
+                case var a when a >= 0xff10 && a <= 0xff3f:
                     sound.WriteByte(a, value);
                     break;
                 case var a when a >= 0xff00 && a <= 0xff7f:

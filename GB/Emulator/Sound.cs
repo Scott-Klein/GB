@@ -32,6 +32,14 @@ namespace GB.Emulator
             }
         }
 
+        public DynamicSoundEffectInstance CH3
+        {
+            set
+            {
+                Channel_Three = new SoundChannel(value);
+                Channel_Three.ChannelThree = true;
+            }
+        }
         private const float SAMPLE_RATE = 22000f;
 
         private const short SQUARE_HIGH = -32768;
@@ -42,6 +50,8 @@ namespace GB.Emulator
         private const int SOUND_TWO_ON_FLAG = 0x02;
         private const int SOUND_THREE_ON_FLAG = 0x4;
         private const int SOUND_FOUR_ON_FLAG = 0x8;
+        private readonly Clock clock;
+
         //Sound Channel 1
         private byte NR10; // CH1 Sweep.
 
@@ -76,14 +86,14 @@ namespace GB.Emulator
         private byte NR51; // Selection of sound output tuerminal
 
         private byte NR52; // Sound on/off
-        private byte[] WavePatternRam;
 
         private SoundChannel Channel_One;
         private SoundChannel Channel_Two;
+        private SoundChannel Channel_Three;
 
-        public Sound()
+        public Sound(Clock clock)
         {
-            WavePatternRam = new byte[16];
+            this.clock = clock;
         }
 
         public byte ReadByte(ushort addr)
@@ -111,16 +121,19 @@ namespace GB.Emulator
                 0xff24 => NR50,
                 0xff25 => NR51,
                 0xff26 => NR52,
-                var a when a >= 0xff30 && a <= 0xff3f => WavePatternRam[a & 0xf]
+                var a when a >= 0xff30 && a <= 0xff3f => Channel_Three.WavePatternRam[a & 0xf]
             };
         }
-
+        private long lastTick;
         public void Tick()
         {
             if (NR52 != 0)
             {
-                Channel_One.Tick();
-                Channel_Two.Tick();
+                long ticks = clock.Cycles - lastTick;
+                lastTick = clock.Cycles;
+                //Channel_One.Tick();
+                //Channel_Two.Tick();
+                Channel_Three.Tick(ticks);
             }
             //NR52 = Channel_One.ChannelOn ? (byte)(NR52 | SOUND_ONE_ON_FLAG) : (byte)(NR52 & (~SOUND_ONE_ON_FLAG));
         }
@@ -176,22 +189,27 @@ namespace GB.Emulator
 
                 case 0xff1a:
                     NR30 = value;
+                    Channel_Three.ChannelOn = (value & 0x80) > 0;
                     break;
 
                 case 0xff1b:
                     NR31 = value;
+                    Channel_Three.Ch3SoundLength = value;
                     break;
 
                 case 0xff1c:
+                    Channel_Three.WaveDataVolume = value;
                     NR32 = value;
                     break;
 
                 case 0xff1d:
                     NR33 = value;
+                    Channel_Three.FrequencyLo = value;
                     break;
 
                 case 0xff1e:
                     NR34 = value;
+                    Channel_Three.Ch3HighData = value;
                     break;
 
                 case 0xff20:
@@ -223,7 +241,8 @@ namespace GB.Emulator
                     break;
 
                 case var a when a >= 0xff30 && a <= 0xff3f:
-                    this.WavePatternRam[a & 0xf] = value;
+                    Channel_Three.WavePatternRam[a & 0xf] = value;
+                    Channel_Three.WriteToWaveBuffer(value);
                     break;
             }
         }

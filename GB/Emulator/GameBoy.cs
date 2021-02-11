@@ -24,7 +24,7 @@ namespace Emulator
 
             this.clock = new Clock();
             this.ppu = new PPU(clock);
-            this.sound = new Sound();
+            this.sound = new Sound(clock);
             this.memory = new MMU(this.cart, this.ppu, this.clock, sound);
             this.cpu = new CPU(this.memory, clock);
             this.PowerSwitch = true;

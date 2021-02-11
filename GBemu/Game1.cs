@@ -17,6 +17,7 @@ namespace GBemu
         GameBoy gameBoy;
         DynamicSoundEffectInstance ch1;
         DynamicSoundEffectInstance ch2;
+        DynamicSoundEffectInstance ch3;
         SoundEffect sound;
 
         private GraphicsDeviceManager _graphics;
@@ -49,10 +50,13 @@ namespace GBemu
             finalPixels = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
             ch1 = new DynamicSoundEffectInstance(AUDIO_SAMPLE_RATE, AudioChannels.Mono);
             ch2 = new DynamicSoundEffectInstance(AUDIO_SAMPLE_RATE, AudioChannels.Mono);
+            ch3 = new DynamicSoundEffectInstance(AUDIO_SAMPLE_RATE, AudioChannels.Mono);
             ch1.Play();
             ch2.Play();
+            ch3.Play();
             gameBoy.sound.CH1 = ch1;
             gameBoy.sound.CH2 = ch2;
+            gameBoy.sound.CH3 = ch3;
         }
 
         protected override void LoadContent()
@@ -61,7 +65,7 @@ namespace GBemu
             GBVideo = new Texture2D(this.GraphicsDevice, GAMEBOY_WIDTH, GAMEBOY_HEIGHT, false, SurfaceFormat.Color);
             // TODO: use this.Content to load your game content here
             //gameBoy = new GameBoy(@"c:\roms\Tetris (W) (V1.1) [!].gb");
-            gameBoy = new GameBoy(@"c:\roms\pkmnblue.gb");
+            gameBoy = new GameBoy(@"c:\roms\pkmnred.gb");
         }
 
         /// <summary>

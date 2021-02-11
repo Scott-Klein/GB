@@ -31,7 +31,7 @@ namespace GB.Emulator
             timePeriod = (Math.PI * 2 * frequency) / (SAMPLE_RATE);
             for (int i = 0; i < result.Length; i++)
             {
-                result[i] = Convert.ToInt16(Math.Clamp((amp * 15) * Math.Sin(timePeriod * (i + carry)), 0 - amp, amp));
+                result[i] = Convert.ToInt16(Math.Clamp((amp * 200) * Math.Sin(timePeriod * (i + carry)), 0 - amp, amp));
                 
             }
             var buffer = result.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
@@ -80,6 +80,7 @@ namespace GB.Emulator
             double frequency = CalcFreq(sweep.Frequency);
             int resultIndex = 0;
 
+
             while (true)
             {
                 outBuffer = GenerateTone(frequency, timeResolution, AMPLITUDE_STEPS * envelope.InitialVolume);
@@ -108,7 +109,7 @@ namespace GB.Emulator
                 }
                 Array.Copy(outBuffer, 0, result, resultIndex, outBuffer.Length);
                 resultIndex += outBuffer.Length;
-                if ((envelope.Increasing && envelope.InitialVolume == 0xf )||(!envelope.Increasing && envelope.InitialVolume == 0x00))
+                if ((envelope.Increasing && envelope.InitialVolume == 0xf )||(!envelope.Increasing && envelope.InitialVolume == 0x00) || sweep.Frequency > 2047)
                 {
                     return result;
                 }
