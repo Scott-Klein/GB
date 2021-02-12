@@ -120,8 +120,15 @@ namespace GB.Emulator
                 period = CLOCK_RATE / FrequencyHz;
                 samplesPerPeriod = SAMPLE_RATE / FrequencyHz;
                 FrequencyUpdated = oldFrequency != Frequency;
+                if (Restart)
+                {
+                    TriggerWavePlay();
+                }
             }
         }
+
+        
+
         private bool FrequencyUpdated;
         private double samplesPerPeriod;
         private double period;
@@ -178,40 +185,27 @@ namespace GB.Emulator
             }
             else if (Play() && ChannelThree && currentPeriod > period)
             {
-                int sampleFactor = 2;
-                if (FrequencyUpdated)
-                {
-                    if (sampleFactor * FrequencyHz * 32 < 8000)
-                    {
-                        sampleFactor++;
-                    }else if(sampleFactor * FrequencyHz *32 > 44000)
-                    {
-                        sampleFactor--;
-                    }
-                    this.Channel_Out.Dispose();
-                    this.Channel_Out = new DynamicSoundEffectInstance((int)(32 * FrequencyHz * sampleFactor), AudioChannels.Mono);
-                    this.Channel_Out.Play();
-                    FrequencyUpdated = false;
-                }
-                //take a sample
-                int bufferLength = 2;
-                waveBuffer = new short[pendingSamples.Count* sampleFactor];
-                for (int i = 0; i < pendingSamples.Count; i++)
-                {
-                    for (int j = 0; j < sampleFactor; j++)
-                    {
-                        waveBuffer[sampleFactor * i + j] = pendingSamples[i];
-                    }
-                    wavePatternIndex++;
-                }
-                currentPeriod = 0;
-                //EaseOut();
-                if (waveBuffer.Length > 0)
-                {
-                    bBuffer = waveBuffer.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
-                    Channel_Out.SubmitBuffer(bBuffer);
-                    pendingSamples = new List<short>();
-                }
+                //int sampleFactor = MultiplySamples();
+                //
+                ////take a sample
+                //waveBuffer = new short[50* pendingSamples.Count * sampleFactor];
+                //for (int i = 0; i <50* pendingSamples.Count; i++)
+                //{
+                //    for (int j = 0; j < sampleFactor; j++)
+                //    {
+                //        waveBuffer[sampleFactor * i + j] = pendingSamples[i % pendingSamples.Count];
+                //    }
+                //    wavePatternIndex++;
+                //}
+                //currentPeriod = 0;
+                ////EaseOut();
+                //
+                //if (waveBuffer.Length > 0)
+                //{
+                //    bBuffer = waveBuffer.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
+                //    Channel_Out.SubmitBuffer(bBuffer);
+                //    pendingSamples = new List<short>();
+                //}
             }
             else if (Play() && ChannelThree)
             {
@@ -222,9 +216,59 @@ namespace GB.Emulator
             }
         }
 
+        private void TriggerWavePlay()
+        {
+            int sampleFactor = MultiplySamples();
+            Channel_Out.Stop();
+            Channel_Out.Play();
+            //take a sample
+            var sampleLength = Channel_Out.GetSampleSizeInBytes(TimeSpan.FromSeconds(SoundLength));
+            int bytesWritten = 0;
+
+            while (bytesWritten < sampleLength)
+            {
+                waveBuffer = new short[25 * pendingSamples.Count * sampleFactor];
+                for (int i = 0; i < 25 * pendingSamples.Count; i++)
+                {
+                    for (int j = 0; j < sampleFactor; j++)
+                    {
+                        waveBuffer[sampleFactor * i + j] = pendingSamples[i % pendingSamples.Count];
+                    }
+                    wavePatternIndex++;
+                }
+
+                bBuffer = waveBuffer.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
+                Channel_Out.SubmitBuffer(bBuffer);
+                bytesWritten += bBuffer.Length;
+            }
+            pendingSamples = new List<short>();
+        }
+
+        private int MultiplySamples()
+        {
+            int sampleFactor = 2;
+            if (FrequencyUpdated)
+            {
+                while (sampleFactor * FrequencyHz * 32 < 8000)
+                {
+                    sampleFactor++;
+                }
+                while(sampleFactor * FrequencyHz * 32 > 44000)
+                {
+                    sampleFactor--;
+                }
+                this.Channel_Out.Dispose();
+                this.Channel_Out = new DynamicSoundEffectInstance((int)(32 * FrequencyHz * sampleFactor), AudioChannels.Mono);
+                this.Channel_Out.Play();
+                FrequencyUpdated = false;
+            }
+
+            return sampleFactor;
+        }
+
         internal void WriteToWaveBuffer(byte value)
         {
-            short first = (short)(value & 0xf0);
+            short first = (short)((value & 0xf0) >> 4);
             short second = (short)(value & 0xf);
 
             first = NormaliseValue(first);
