@@ -17,7 +17,7 @@ namespace GB.Emulator
         double timePeriod;
         double frequency;
         private readonly double sweepSeconds;
-
+        public short lfsr = 0x7FFF;
         public ToneGenerator(int sampleRate)
         {
             SAMPLE_RATE = sampleRate;
@@ -38,7 +38,41 @@ namespace GB.Emulator
             carry = result.Length + carry;
             return buffer;
         }
+        public byte[] GenerateNoise(double frequency, bool narrow, Envelope envelope, int length = 200)
+        {
+            int amp = 16000;
+            short[] result = new short[length / 2];
+            double period = (Math.PI * 2 * frequency) / (SAMPLE_RATE);
 
+            var stepSamples = envelope.GetStepSeconds() * SAMPLE_RATE;
+            int stepSample = 0;
+            int prev = 0;
+            for (int i = 0; i < result.Length; i++)
+            {
+                if (stepSample++ > stepSamples && i > 2 && ((envelope.Increasing && envelope.InitialVolume != 0xf) || (!envelope.Increasing && envelope.InitialVolume != 0)))
+                {
+                    envelope.InitialVolume = envelope.Increasing ? envelope.InitialVolume + 1 : envelope.InitialVolume - 1;
+                    stepSample = 0;
+                }
+                var wav = Convert.ToInt16(Math.Clamp((amp * 200) * Math.Sin(period * i), 0 - amp, amp));
+                if (prev > 14000 && wav < 14000)
+                {
+                    //toggle
+                    int xorResult = ((lfsr >> 1) & 0x1) ^ (lfsr & 0x1);
+                    lfsr >>= 1;
+                    lfsr = xorResult > 0 ? lfsr |= 0x4000 : lfsr &= 0x3fff;
+                    if (narrow)
+                    {
+                        lfsr = xorResult > 0 ? lfsr |= 0x40 : lfsr &= 0x3f;
+                    }
+                }
+                prev = wav;
+                result[i] = (lfsr & 0x1) > 0? (short)(-1000 * envelope.InitialVolume) : (short)(1000 * envelope.InitialVolume);
+            }
+            var buffer = result.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
+            return buffer;
+
+        }
         public byte[] GenerateTone(double frequency, double length, Envelope envelope)
         {
             var stepLength = envelope.GetStepSeconds();

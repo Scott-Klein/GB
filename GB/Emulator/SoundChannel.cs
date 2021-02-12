@@ -26,6 +26,11 @@ namespace GB.Emulator
                 FrequencyHz = CalcFreq(Frequency);
                 PlayOnce = (value & 0x40) > 0;
                 Restart = (0x80 & value) > 0;
+                if (Restart)
+                {
+                    Channel_Out.Stop();
+                    Channel_Out.Play();
+                }
                 sweep.Frequency = Frequency;
             }
         }
@@ -53,6 +58,7 @@ namespace GB.Emulator
                         break;
                 }
                 SoundLength = CalcLength(value & 0x3f);
+                bytesToWrite = Channel_Out.GetSampleSizeInBytes(TimeSpan.FromSeconds(SoundLength));
             }
         }
 
@@ -120,9 +126,14 @@ namespace GB.Emulator
                 period = CLOCK_RATE / FrequencyHz;
                 samplesPerPeriod = SAMPLE_RATE / FrequencyHz;
                 FrequencyUpdated = oldFrequency != Frequency;
+                if (FrequencyUpdated)
+                {
+                    this.TriggerWavePlay();
+                }
                 if (Restart)
                 {
-                    TriggerWavePlay();
+                    bytesToWrite = Channel_Out.GetSampleSizeInBytes(TimeSpan.FromSeconds(SoundLength));
+                    bytesWritten = 0;
                 }
             }
         }
@@ -135,20 +146,20 @@ namespace GB.Emulator
         private int currentPeriod;
         private const int CLOCK_RATE = 4194304;
         private const int SWEEP_ADDITION = 8;
-        private DynamicSoundEffectInstance Channel_Out;
-        private float FrequencyHz;
+        protected DynamicSoundEffectInstance Channel_Out;
+        protected float FrequencyHz;
         private int FreqHi;
         private int FreqLo;
         private int Frequency;
         private bool PlayOnce;
-        private bool Restart;
+        protected bool Restart;
         private int SAMPLE_RATE = 44000;
         private float SoundLength;
-        private Envelope envelope;
+        protected Envelope envelope;
         private double WaveDuty;
         private Sweep sweep;
         public bool ChannelOn { get; set; }
-        private ToneGenerator generator;
+        protected ToneGenerator generator;
         public bool ChannelThree;
 
         public SoundChannel(DynamicSoundEffectInstance soundOutput)
@@ -167,7 +178,7 @@ namespace GB.Emulator
         private int wavePatternIndex;
         private double samplePeriodIndex;
         private List<short> pendingSamples;
-        public void Tick(long cycles = 0)
+        public virtual void Tick(long cycles = 0)
         {
             currentPeriod += (int)cycles;
             if (Restart && !ChannelThree)
@@ -183,29 +194,12 @@ namespace GB.Emulator
                 Channel_Out.SubmitBuffer(CreateTone());
                 Restart = false;
             }
-            else if (Play() && ChannelThree && currentPeriod > period)
+            else if (Restart && ChannelThree && currentPeriod > period)
             {
-                //int sampleFactor = MultiplySamples();
-                //
-                ////take a sample
-                //waveBuffer = new short[50* pendingSamples.Count * sampleFactor];
-                //for (int i = 0; i <50* pendingSamples.Count; i++)
-                //{
-                //    for (int j = 0; j < sampleFactor; j++)
-                //    {
-                //        waveBuffer[sampleFactor * i + j] = pendingSamples[i % pendingSamples.Count];
-                //    }
-                //    wavePatternIndex++;
-                //}
-                //currentPeriod = 0;
-                ////EaseOut();
-                //
-                //if (waveBuffer.Length > 0)
-                //{
-                //    bBuffer = waveBuffer.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
-                //    Channel_Out.SubmitBuffer(bBuffer);
-                //    pendingSamples = new List<short>();
-                //}
+                if (pendingSamples.Count >= 32)
+                {
+                    TriggerWavePlay();
+                }
             }
             else if (Play() && ChannelThree)
             {
@@ -215,7 +209,8 @@ namespace GB.Emulator
                 //}
             }
         }
-
+        protected int bytesWritten;
+        protected int bytesToWrite;
         private void TriggerWavePlay()
         {
             int sampleFactor = MultiplySamples();
@@ -223,12 +218,11 @@ namespace GB.Emulator
             Channel_Out.Play();
             //take a sample
             var sampleLength = Channel_Out.GetSampleSizeInBytes(TimeSpan.FromSeconds(SoundLength));
-            int bytesWritten = 0;
 
-            while (bytesWritten < sampleLength)
+            while (Channel_Out.PendingBufferCount < 3)
             {
-                waveBuffer = new short[25 * pendingSamples.Count * sampleFactor];
-                for (int i = 0; i < 25 * pendingSamples.Count; i++)
+                waveBuffer = new short[10 * pendingSamples.Count * sampleFactor];
+                for (int i = 0; i < 10 * pendingSamples.Count; i++)
                 {
                     for (int j = 0; j < sampleFactor; j++)
                     {
@@ -236,12 +230,18 @@ namespace GB.Emulator
                     }
                     wavePatternIndex++;
                 }
-
-                bBuffer = waveBuffer.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
-                Channel_Out.SubmitBuffer(bBuffer);
-                bytesWritten += bBuffer.Length;
+                if (waveBuffer.Length > 0)
+                {
+                    bBuffer = waveBuffer.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
+                    Channel_Out.SubmitBuffer(bBuffer);
+                    bytesWritten += bBuffer.Length;
+                }
             }
-            pendingSamples = new List<short>();
+
+            if (bytesWritten> bytesToWrite)
+            {
+                Restart = false;
+            }
         }
 
         private int MultiplySamples()
@@ -268,6 +268,10 @@ namespace GB.Emulator
 
         internal void WriteToWaveBuffer(byte value)
         {
+            if (pendingSamples.Count >= 32)
+            {
+                pendingSamples = new List<short>();
+            }
             short first = (short)((value & 0xf0) >> 4);
             short second = (short)(value & 0xf);
 
@@ -282,7 +286,7 @@ namespace GB.Emulator
         private short NormaliseValue(short value)
         {
             value >>= waveVolume;
-            value <<= 10;
+            value <<= 11;
             return value;
         }
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Audio;
+﻿using GB.Emulator.Video;
+using Microsoft.Xna.Framework.Audio;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -40,7 +41,7 @@ namespace GB.Emulator
                 Channel_Three.ChannelThree = true;
             }
         }
-        private const float SAMPLE_RATE = 22000f;
+        private const int SAMPLE_RATE = 44000;
 
         private const short SQUARE_HIGH = -32768;
 
@@ -90,10 +91,11 @@ namespace GB.Emulator
         private SoundChannel Channel_One;
         private SoundChannel Channel_Two;
         private SoundChannel Channel_Three;
-
+        private NoiseChannel Channel_Four;
         public Sound(Clock clock)
         {
             this.clock = clock;
+            Channel_Four = new NoiseChannel(new DynamicSoundEffectInstance(SAMPLE_RATE, AudioChannels.Mono));
         }
 
         public byte ReadByte(ushort addr)
@@ -131,9 +133,10 @@ namespace GB.Emulator
             {
                 long ticks = clock.Cycles - lastTick;
                 lastTick = clock.Cycles;
-                //Channel_One.Tick();
-                //Channel_Two.Tick();
+                Channel_One.Tick();
+                Channel_Two.Tick();
                 Channel_Three.Tick(ticks);
+                Channel_Four.Tick();
             }
             //NR52 = Channel_One.ChannelOn ? (byte)(NR52 | SOUND_ONE_ON_FLAG) : (byte)(NR52 & (~SOUND_ONE_ON_FLAG));
         }
@@ -214,18 +217,22 @@ namespace GB.Emulator
 
                 case 0xff20:
                     NR41 = value;
+                    Channel_Four.SoundLengthWavePatternDuty = value;
                     break;
 
                 case 0xff21:
                     NR42 = value;
+                    Channel_Four.VolumeEnvelope = value;
                     break;
 
                 case 0xff22:
                     NR43 = value;
+                    Channel_Four.PolyNomialCounter = value;
                     break;
 
                 case 0xff23:
                     NR44 = value;
+                    Channel_Four.FrequncyHi = value;
                     break;
 
                 case 0xff24:
