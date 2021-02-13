@@ -74,8 +74,25 @@ namespace GBemu
         /// <param name="gameTime"></param>
         protected override void Update(GameTime gameTime)
         {
+            gameBoy.JoyPad.Reset();
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+            if (Keyboard.GetState().IsKeyDown(Keys.Enter))
+                gameBoy.JoyPad.Start = true;
+            if (Keyboard.GetState().IsKeyDown(Keys.RightShift))
+                gameBoy.JoyPad.Select = true;
+            if (Keyboard.GetState().IsKeyDown(Keys.Z))
+                gameBoy.JoyPad.A = true;
+            if (Keyboard.GetState().IsKeyDown(Keys.X))
+                gameBoy.JoyPad.B = true;
+            if (Keyboard.GetState().IsKeyDown(Keys.Up))
+                gameBoy.JoyPad.Up = true;
+            if (Keyboard.GetState().IsKeyDown(Keys.Down))
+                gameBoy.JoyPad.Down = true;
+            if (Keyboard.GetState().IsKeyDown(Keys.Left))
+                gameBoy.JoyPad.Left = true;
+            if (Keyboard.GetState().IsKeyDown(Keys.Right))
+                gameBoy.JoyPad.Right = true;
 
             // TODO: Add your update logic here
             gameBoy.Run();

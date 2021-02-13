@@ -9,6 +9,7 @@ namespace GB.Emulator
 {
     public class MMU
     {
+        private const int JOY_INTERRUPT_ENABLE = 0x10;
         Cartridge rom;
         PPU ppu;
         private readonly Clock clock;
@@ -40,12 +41,13 @@ namespace GB.Emulator
         {
             InitialiseMemory();
         }
-        public MMU(Cartridge cartridge, PPU ppu, Clock clock, Sound sound, bool testing = false, byte testInstruction = 0x0)
+        public MMU(Cartridge cartridge, PPU ppu, Clock clock, Sound sound,Joypad joyPad, bool testing = false, byte testInstruction = 0x0)
         {
             this.ppu = ppu;
             this.clock = clock;
             this.sound = sound;
-            Joy = new Joypad();
+            Joy = joyPad;
+            Joy.JoyPadInterrupt += JoyPadInterrupt;
             ppu.SetMMU(this);
             InitialiseMemory();
             rom = cartridge;
@@ -67,6 +69,12 @@ namespace GB.Emulator
                 bootEnable = false;
             }
         }
+
+        private void JoyPadInterrupt(object sender, EventArgs e)
+        {
+            this.IF |= JOY_INTERRUPT_ENABLE;
+        }
+
         public void Tick()
         {
             ppu.Tick();
@@ -87,6 +95,7 @@ namespace GB.Emulator
             }
             return addr switch
             {
+                0xff00 => Joy.Joy1,
                 0xff0f => IF,
                 0xffff => IE,
                 var a when a <= 0x7fff => rom.ReadByte(addr),
@@ -160,6 +169,9 @@ namespace GB.Emulator
                     break;
                 case var a when a >= 0xff10 && a <= 0xff3f:
                     sound.WriteByte(a, value);
+                    break;
+                case 0xff00:
+                    Joy.Joy1 = value;
                     break;
                 case var a when a >= 0xff00 && a <= 0xff7f:
                     IOregisters[addr & 0x00ff] = value;

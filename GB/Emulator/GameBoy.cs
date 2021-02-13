@@ -12,6 +12,7 @@ namespace Emulator
         private readonly CPU cpu;
         private readonly MMU memory;
         private readonly Clock clock;
+        public Joypad JoyPad;
         public Sound sound;
         public bool PowerSwitch { get; set; }
         public Cartridge Cart { get { return this.cart; }  }
@@ -24,8 +25,9 @@ namespace Emulator
 
             this.clock = new Clock();
             this.ppu = new PPU(clock);
+            this.JoyPad = new Joypad();
             this.sound = new Sound(clock);
-            this.memory = new MMU(this.cart, this.ppu, this.clock, sound);
+            this.memory = new MMU(this.cart, this.ppu, this.clock, sound, JoyPad);
             this.cpu = new CPU(this.memory, clock);
             this.PowerSwitch = true;
         }
