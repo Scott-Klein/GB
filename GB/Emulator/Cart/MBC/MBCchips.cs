@@ -13,6 +13,15 @@ namespace GB.Emulator.Cart.MBC
         public byte RTC_H;
         public byte RTC_DL;
         public byte RTC_DH;
+
+        internal void LatchTime()
+        {
+            RTC_S = (byte)DateTime.Now.Second;
+            RTC_M = (byte)DateTime.Now.Minute;
+            RTC_H = (byte)DateTime.Now.Hour;
+            RTC_DL = 0;
+            RTC_DH = 0x40;
+        }
     }
     public enum RAM_RTC_REG : byte
     {

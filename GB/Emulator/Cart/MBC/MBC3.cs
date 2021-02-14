@@ -9,7 +9,7 @@ namespace GB.Emulator.Cart.MBC
         }
         protected RAM_RTC_REG RAM_RTC_REG;
         protected RTC RTC;
-        protected byte RTC_latch;
+        protected byte RTC_latch = 0xff;
         public override byte ReadByte(ushort addr)
         {
             if (addr <= 0x7fff)
@@ -58,7 +58,7 @@ namespace GB.Emulator.Cart.MBC
                     if (value == 1 && RTC_latch == 0)
                     {
                         //Latch the RTC
-                        throw new NotImplementedException("RTC Clock has not been implemented");
+                        RTC.LatchTime();
                     }
                     RTC_latch = value;
                     break;
