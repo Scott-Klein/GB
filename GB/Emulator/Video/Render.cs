@@ -211,9 +211,6 @@ namespace GB.Emulator.Video
                     byte[] tile = new byte[TILE_BYTE_SIZE];
                     Array.Copy(VRAM, sprites[i].TileNum * TILE_BYTE_SIZE, tile, 0, TILE_BYTE_SIZE);
 
-                    //Array.Copy(VRAM, tileId * TILE_BYTE_SIZE, tile, 0, TILE_BYTE_SIZE);
-                    //Array.Copy(VRAM, sprites[i].TileNum * TILE_BYTE_SIZE, tile, 0, TILE_BYTE_SIZE);
-
                     if (yOffset < 8 && yOffset >= 0)
                     {
                         for (int xPos = sprites[i].Xpos; xPos < sprites[i].Xpos + 8; xPos++)
