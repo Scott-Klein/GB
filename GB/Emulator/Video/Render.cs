@@ -191,7 +191,7 @@ namespace GB.Emulator.Video
                     if (s.Xpos <= 0)
                         continue;
                     s.Ypos = ppu.ReadByte(sprite);
-                    if ((ScanLine + 16) < s.Ypos || (ScanLine + 16) > (s.Ypos + spriteHeight))
+                    if ((ScanLine + 16) < s.Ypos || (ScanLine + 16) >= (s.Ypos + spriteHeight))
                         continue;
                     
                     s.TileNum = ppu.ReadByte(sprite + 2);
