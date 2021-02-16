@@ -142,7 +142,7 @@ namespace GB.Emulator.Video
             //Select the correct tile map row and store it in memory
             int absoluteY = (ScanLine + SCY) % 256;//256 is the height of the bg tilemap.
 
-            if (absoluteY >> 3 != tileRow)
+            if (absoluteY >> 3 != tileRow || LCDC.BGTileMap_3 != LCDC.WindowTileMap_6)
             {
                 //swap the cached background row
                 tileRow = absoluteY >> 3;
@@ -250,7 +250,7 @@ namespace GB.Emulator.Video
 
             int offsetY = ScanLine - WY;
 
-            if (offsetY >> 3 != winTileRow || ScanLine == 0)
+            if (offsetY >> 3 != winTileRow || ScanLine == 0 || LCDC.WindowTileMap_6 != LCDC.BGTileMap_3)
             {
                 TileMapCache = CacheBackgroundRow(offsetY >> 3);
             }
