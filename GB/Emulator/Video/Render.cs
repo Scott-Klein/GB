@@ -21,7 +21,7 @@ namespace GB.Emulator.Video
         private const int Y_FLIP = 0x40;
         private const int GB_SCREEN_HEIGHT = 144;
         private const int GB_SCREEN_WIDTH = 160;
-        private const int SPRITE_BUFFER_SIZE = 12; //10 is the correct number, but 12 is a work around for a graphical issue.
+        private const int SPRITE_BUFFER_SIZE = 10; //10 is the correct number, but 12 is a work around for a graphical issue.
         private const int TILE_BYTE_SIZE = 16;
         private const int TILE_COLUMNS = 32;
         private const int TOTAL_SPRITES = 40;
@@ -215,6 +215,11 @@ namespace GB.Emulator.Video
                     {
                         for (int xPos = sprites[i].Xpos; xPos < sprites[i].Xpos + 8; xPos++)
                         {
+                            // Don't draw pixels that are off screen.
+                            // the Xpos represents the right edge of sprite and not all pixels for a sprite will be on screen.
+                            if (xPos < 8)
+                                continue;
+
                             int currentPixelAddress = (ScanLine * GB_SCREEN_WIDTH) + xPos - 8;
 
                             //if the flip flag is set, iterate through the pixels in the opposite way.
@@ -236,7 +241,7 @@ namespace GB.Emulator.Video
         private void RenderWindow()
         {
             int wxCorrected = WX - 7;
-            if (ScanLine < WY || !LCDC.WindowEnable_5 || wxCorrected - 7 >= 160)
+            if (ScanLine < WY || !LCDC.WindowEnable_5 || wxCorrected >= 160)
             {
                 return;
             }
@@ -244,7 +249,8 @@ namespace GB.Emulator.Video
             BGTileOffset = LCDC.WindowTileMap_6 ? 0x9c00 :0x9800;
 
             int offsetY = ScanLine - WY;
-            if (offsetY >> 3 != winTileRow)
+
+            if (offsetY >> 3 != winTileRow || ScanLine == 0)
             {
                 TileMapCache = CacheBackgroundRow(offsetY >> 3);
             }
