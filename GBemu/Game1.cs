@@ -13,11 +13,12 @@ namespace GBemu
         private const int GAMEBOY_HEIGHT = 144;
         private const int AUDIO_SAMPLE_RATE = 44000;
         Texture2D GBVideo;
-        Color[] finalPixels;
+        Color[] gbFrameBuffer;
         GameBoy gameBoy;
         DynamicSoundEffectInstance ch1;
         DynamicSoundEffectInstance ch2;
         DynamicSoundEffectInstance ch3;
+
         SoundEffect sound;
 
         private GraphicsDeviceManager _graphics;
@@ -47,7 +48,7 @@ namespace GBemu
             this._graphics.PreferredBackBufferHeight = GAMEBOY_HEIGHT*6;
             this._graphics.ApplyChanges();
             GBVideo = new Texture2D(GraphicsDevice, GAMEBOY_WIDTH, GAMEBOY_HEIGHT);
-            finalPixels = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
+            gbFrameBuffer = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
             ch1 = new DynamicSoundEffectInstance(AUDIO_SAMPLE_RATE, AudioChannels.Mono);
             ch2 = new DynamicSoundEffectInstance(AUDIO_SAMPLE_RATE, AudioChannels.Mono);
             ch3 = new DynamicSoundEffectInstance(AUDIO_SAMPLE_RATE, AudioChannels.Mono);
@@ -117,27 +118,27 @@ namespace GBemu
         /// </summary>
         private void FillBufferFromEmulator()
         {
-            finalPixels = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
+            gbFrameBuffer = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
             for (int i = 0; i < this.gameBoy.Pixels.Length; i++)
             {
                 int n = this.gameBoy.Pixels[i];
                 switch(n)
                 {
                     case 0:
-                        finalPixels[i] = new Color(255, 255, 255);
+                        gbFrameBuffer[i] = new Color(255, 255, 255);
                         break;
                     case 1:
-                        finalPixels[i] = new Color(170, 170, 170);
+                        gbFrameBuffer[i] = new Color(170, 170, 170);
                         break;
                     case 2:
-                        finalPixels[i] = new Color(85, 85, 85);
+                        gbFrameBuffer[i] = new Color(85, 85, 85);
                         break;
                     case 3:
-                        finalPixels[i] = new Color(0, 0, 0);
+                        gbFrameBuffer[i] = new Color(0, 0, 0);
                         break;
                 }
             }
-            GBVideo.SetData(finalPixels);
+            GBVideo.SetData(gbFrameBuffer);
         }
 
 
