@@ -95,6 +95,9 @@ namespace GB.Emulator
         public Sound(Clock clock)
         {
             this.clock = clock;
+            Channel_One = new SoundChannel(new DynamicSoundEffectInstance(SAMPLE_RATE, AudioChannels.Mono));
+            Channel_Two = new SoundChannel(new DynamicSoundEffectInstance(SAMPLE_RATE, AudioChannels.Mono));
+            Channel_Three = new SoundChannel(new DynamicSoundEffectInstance(SAMPLE_RATE, AudioChannels.Mono));
             Channel_Four = new NoiseChannel(new DynamicSoundEffectInstance(SAMPLE_RATE, AudioChannels.Mono));
         }
 

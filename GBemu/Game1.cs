@@ -3,6 +3,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Myra;
+using Myra.Graphics2D.UI;
 using System;
 
 namespace GBemu
@@ -11,15 +13,11 @@ namespace GBemu
     {
         private const int GAMEBOY_WIDTH = 160;
         private const int GAMEBOY_HEIGHT = 144;
-        private const int AUDIO_SAMPLE_RATE = 44000;
         Texture2D GBVideo;
         Color[] gbFrameBuffer;
         GameBoy gameBoy;
-        DynamicSoundEffectInstance ch1;
-        DynamicSoundEffectInstance ch2;
-        DynamicSoundEffectInstance ch3;
-
-        SoundEffect sound;
+        EmUI ui;
+        private Desktop _desktop;
 
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
@@ -33,40 +31,35 @@ namespace GBemu
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
             Window.AllowUserResizing = true;
+            IsMouseVisible = true;
         }
 
         /// <summary>
-        /// Set up my variables and start the running of the game.
+        /// Set up my variables and start running the game.
         /// </summary>
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
-
             base.Initialize();
 
-            this._graphics.PreferredBackBufferWidth = GAMEBOY_WIDTH* 6;
-            this._graphics.PreferredBackBufferHeight = GAMEBOY_HEIGHT*6;
+            this._graphics.PreferredBackBufferWidth = 1280;
+            this._graphics.PreferredBackBufferHeight = 720;
             this._graphics.ApplyChanges();
             GBVideo = new Texture2D(GraphicsDevice, GAMEBOY_WIDTH, GAMEBOY_HEIGHT);
             gbFrameBuffer = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
-            ch1 = new DynamicSoundEffectInstance(AUDIO_SAMPLE_RATE, AudioChannels.Mono);
-            ch2 = new DynamicSoundEffectInstance(AUDIO_SAMPLE_RATE, AudioChannels.Mono);
-            ch3 = new DynamicSoundEffectInstance(AUDIO_SAMPLE_RATE, AudioChannels.Mono);
-            ch1.Play();
-            ch2.Play();
-            ch3.Play();
-            gameBoy.sound.CH1 = ch1;
-            gameBoy.sound.CH2 = ch2;
-            gameBoy.sound.CH3 = ch3;
         }
 
         protected override void LoadContent()
         {
+            MyraEnvironment.Game = this;
+            ui = new EmUI();
+            _desktop = new Desktop();
+            _desktop.Root = ui;
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             GBVideo = new Texture2D(this.GraphicsDevice, GAMEBOY_WIDTH, GAMEBOY_HEIGHT, false, SurfaceFormat.Color);
             // TODO: use this.Content to load your game content here
             //gameBoy = new GameBoy(@"c:\roms\Tetris (W) (V1.1) [!].gb");
             gameBoy = new GameBoy(@"c:\roms\pkmnred.gb");
+            
         }
 
         /// <summary>
@@ -96,7 +89,11 @@ namespace GBemu
                 gameBoy.JoyPad.Right = true;
 
             // TODO: Add your update logic here
-            gameBoy.Run();
+            if (ui.Play)
+            {
+                gameBoy.Run();
+            }
+            
             base.Update(gameTime);
         }
 
@@ -105,10 +102,16 @@ namespace GBemu
             FillBufferFromEmulator();
 
             Rectangle dst = GenerateBlackBars();
-
+            
             this._spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Opaque, SamplerState.PointClamp);
             this._spriteBatch.Draw(GBVideo, dst, Color.White);
             this._spriteBatch.End();
+            
+            if (!ui.Play)
+            {
+                _desktop.Render();
+            }
+ 
             base.Draw(gameTime);
         }
 
