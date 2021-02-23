@@ -16,17 +16,17 @@ namespace GBemu
         Texture2D GBVideo;
         Color[] gbFrameBuffer;
         GameBoy gameBoy;
-        EmUI ui;
         private Desktop _desktop;
-
+        string romPath;
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
 
         /// <summary>
         /// Sets up the monogame framework
         /// </summary>
-        public Game1()
+        public Game1(string path)
         {
+            this.romPath = path;
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
@@ -41,8 +41,8 @@ namespace GBemu
         {
             base.Initialize();
 
-            this._graphics.PreferredBackBufferWidth = 1280;
-            this._graphics.PreferredBackBufferHeight = 720;
+            this._graphics.PreferredBackBufferWidth = GAMEBOY_WIDTH;
+            this._graphics.PreferredBackBufferHeight = GAMEBOY_HEIGHT;
             this._graphics.ApplyChanges();
             GBVideo = new Texture2D(GraphicsDevice, GAMEBOY_WIDTH, GAMEBOY_HEIGHT);
             gbFrameBuffer = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
@@ -51,14 +51,11 @@ namespace GBemu
         protected override void LoadContent()
         {
             MyraEnvironment.Game = this;
-            ui = new EmUI();
-            _desktop = new Desktop();
-            _desktop.Root = ui;
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             GBVideo = new Texture2D(this.GraphicsDevice, GAMEBOY_WIDTH, GAMEBOY_HEIGHT, false, SurfaceFormat.Color);
             // TODO: use this.Content to load your game content here
             //gameBoy = new GameBoy(@"c:\roms\Tetris (W) (V1.1) [!].gb");
-            gameBoy = new GameBoy(@"c:\roms\pkmnred.gb");
+            gameBoy = new GameBoy(@romPath);
             
         }
 
@@ -89,10 +86,8 @@ namespace GBemu
                 gameBoy.JoyPad.Right = true;
 
             // TODO: Add your update logic here
-            if (ui.Play)
-            {
-                gameBoy.Run();
-            }
+
+            gameBoy.Run();
             
             base.Update(gameTime);
         }
@@ -106,12 +101,7 @@ namespace GBemu
             this._spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Opaque, SamplerState.PointClamp);
             this._spriteBatch.Draw(GBVideo, dst, Color.White);
             this._spriteBatch.End();
-            
-            if (!ui.Play)
-            {
-                _desktop.Render();
-            }
- 
+
             base.Draw(gameTime);
         }
 
