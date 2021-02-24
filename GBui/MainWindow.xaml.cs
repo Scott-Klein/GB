@@ -83,9 +83,10 @@ namespace GBui
             RomTitle = "Game Boy Game";
             cart = new Cartridge(Path);
             RomTitle = cart.Info.Name;
+            Type = cart.Info.Type;
         }
         Cartridge cart;
-
+        public CartridgeType Type { get; set; }
         public string Path { get; set; }
         public string RomTitle { get; set; }
     }

@@ -39,7 +39,27 @@
                         <RowDefinition Height="3*"></RowDefinition>
                     </Grid.RowDefinitions>
                     <Label Content="Your Library" Margin="25,0,0,0" Foreground="White" VerticalAlignment="Center" />
-                    <ListView x:Name="Library" DisplayMemberPath="RomTitle" Grid.Row="1" Background="#FF18273B" Margin="15" BorderBrush="#00ABADB3" UseLayoutRounding="False" Padding="10" Foreground="White"/>
+                    <ListView x:Name="Library" Grid.Row="1" Background="#FF18273B" Margin="15" BorderBrush="#00ABADB3" UseLayoutRounding="False" Padding="10" Foreground="White">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*"></ColumnDefinition>
+                                        <ColumnDefinition Width="1*"></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" Orientation="Vertical">
+                                        <TextBlock Text="Title: " FontSize="11" Foreground="#ddd"/>
+                                        <TextBlock Text="{Binding RomTitle}" FontWeight="Bold" />
+                                    </StackPanel>
+                                    <StackPanel Margin="50,0,0,0" Grid.Column="1">
+                                        <TextBlock Text="Cartridge: "/>
+                                        <TextBlock Text="{Binding Type}" FontWeight="Bold" />
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="15,0,0,15">
                         <Button Margin="0,0,50,0" Foreground="White" Background="#FF743897"  BorderBrush="#00707070" Height="25" Padding="10,1,10,1" Click="AddRomButton_Click">Add Rom</Button>
                         <Button Background="#FF743897" Foreground="White"  BorderBrush="#00707070" Height="25" Padding="10,1,10,1" Click="AddFolderButton_Click">Add Folder</Button>
