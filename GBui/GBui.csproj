@@ -7,8 +7,35 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Grey cart.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\GBemu\GBemu.csproj" />
     <ProjectReference Include="..\GB\GB.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Images\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Grey cart.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Images\Blue Cart.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Grey cart.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Red cart.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Yellow.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
