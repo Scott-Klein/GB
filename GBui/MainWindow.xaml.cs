@@ -22,6 +22,8 @@ namespace GBui
     /// </summary>
     public partial class MainWindow : Window
     {
+        public List<RomListItem> Roms { get; set; }
+
         public MainWindow()
         {
             InitializeComponent();
@@ -31,7 +33,11 @@ namespace GBui
         //Load roms from config.
         private void LoadLibrary(object sender, RoutedEventArgs e)
         {
-            //this.Library.Items.
+            Roms = CatBoyConfig.DeserialiseLibrary();
+            foreach (var item in Roms)
+            {
+                this.Library.Items.Add(item);
+            }
         }
 
         private void AddRomButton_Click(object sender, RoutedEventArgs e)
@@ -41,11 +47,14 @@ namespace GBui
             Nullable<bool> result = openFileDlg.ShowDialog();
             if (result == true && openFileDlg.FileName.EndsWith(".gb"))
             {
-                this.Library.Items.Add(new RomListItem(openFileDlg.FileName));
+                var selectedRom = new RomListItem(openFileDlg.FileName);
+                this.Library.Items.Add(selectedRom);
+                Roms.Add(selectedRom);
+                CatBoyConfig.SaveLibrary(Roms);
             }
             else
             {
-                MessageBox.Show("Hello, world!");
+                MessageBox.Show("You haven't found a Game Boy ROM.");
             }
         }
 
@@ -77,6 +86,11 @@ namespace GBui
 
     public class RomListItem
     {
+        //default ctor for json deserialiser.
+        public RomListItem()
+        {
+
+        }
         public RomListItem(string title)
         {
             Path = title;
@@ -85,6 +99,7 @@ namespace GBui
             RomTitle = cart.Info.Name;
             Type = cart.Info.Type;
         }
+
         Cartridge cart;
         public CartridgeType Type { get; set; }
         public string Path { get; set; }
