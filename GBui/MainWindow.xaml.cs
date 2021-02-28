@@ -23,10 +23,14 @@ namespace GBui
     public partial class MainWindow : Window
     {
         public List<RomListItem> Roms { get; set; }
+        public string SelectedTItle { get; set; }
+
+        public bool Playing { get; set; }
 
         public MainWindow()
         {
             InitializeComponent();
+            this.DataContext = this;
             this.Loaded += LoadLibrary;
         }
 
@@ -60,9 +64,14 @@ namespace GBui
 
         private void PlaySelectedGame(object sender, RoutedEventArgs e)
         {
+            if (Playing)
+            {
+                return;
+            }
             var rom = this.Library.SelectedItem as RomListItem;
             if (rom is not null)
             {
+                Playing = true;
                 GameLaunch(rom.Path);
             }
             else
@@ -72,13 +81,36 @@ namespace GBui
         }
 
         [STAThread]
-        static void GameLaunch(string path)
+        void GameLaunch(string path)
         {
+            
             using (var game = new Game1(path))
+            {
                 game.Run();
+                
+                game.Disposed += Game_Disposed;
+            }
+                
+        }
+
+        private void Game_Disposed(object sender, EventArgs e)
+        {
+            Playing = false;
         }
 
         private void AddFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Coming soon...");
+        }
+
+        private void Library_Selected(object sender, RoutedEventArgs e)
+        {
+            var rom = this.Library.SelectedItem as RomListItem;
+            var item = this.Library.SelectedItem as ComboBoxItem;
+            SelectedTitleLabel.Content = rom?.RomTitle ?? "";
+        }
+
+        private void RomCartColor_Changed(object sender, SelectionChangedEventArgs e)
         {
 
         }

@@ -41,8 +41,8 @@ namespace GBemu
         {
             base.Initialize();
 
-            this._graphics.PreferredBackBufferWidth = GAMEBOY_WIDTH;
-            this._graphics.PreferredBackBufferHeight = GAMEBOY_HEIGHT;
+            this._graphics.PreferredBackBufferWidth =4 * GAMEBOY_WIDTH;
+            this._graphics.PreferredBackBufferHeight = 4 * GAMEBOY_HEIGHT;
             this._graphics.ApplyChanges();
             GBVideo = new Texture2D(GraphicsDevice, GAMEBOY_WIDTH, GAMEBOY_HEIGHT);
             gbFrameBuffer = new Color[GAMEBOY_HEIGHT * GAMEBOY_WIDTH];
