@@ -206,7 +206,7 @@ namespace GB.Emulator
         {
             get
             {
-                return LCDC.LCD_7 ? this.scanLine : 0x0; //if the lcd is off return 0x0
+                return LCDC.LCD_7 ? this.scanLine : (byte)0x0; //if the lcd is off return 0x0
             }
             set
             {

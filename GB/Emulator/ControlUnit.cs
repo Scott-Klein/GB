@@ -197,7 +197,7 @@ namespace GB.Emulator
 
         public byte RR(byte value)
         {
-            byte preservedCarry = Registers.Carry ? 0x80 : 0;
+            byte preservedCarry = (byte)(Registers.Carry ? 0x80 : 0);
 
             byte result = (byte)(value >> 1 | preservedCarry);
 
