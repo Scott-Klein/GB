@@ -28,5 +28,6 @@ Project started January 2021, Tetris runs perfectly, Pokemon with an occaisional
 * Display
   + minor graphical glitch from fast moving sprite.
 * UX
-  + interface to load roms (currently the rom to load is hard coded given all the debugging going on)
+  + interface to load roms (current UI is under WPFui branch and is a work in progress)
+  + Save states
 
