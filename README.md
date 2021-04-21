@@ -1,5 +1,5 @@
 # GB
-Project started January 2021, Tetris runs perfectly, Pokemon with an occaisional graphical glitch. Nothing else has been tested yet.
+Project started January 2021, Tetris runs perfectly, Pokemon with an occaisional graphical glitch. Most other ROMS run correctly depending on the exact MBC type.
 
 # Please suggest a name for my emulator!!!
 
